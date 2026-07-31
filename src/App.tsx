@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, Clipboard, Coffee, Compass, ExternalLink, LocateFixed, MapPin, RefreshCw, Share2 } from 'lucide-react';
+import { Check, Clipboard, Coffee, Compass, ExternalLink, LocateFixed, Map, MapPin, RefreshCw, Share2 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 const ALPHABET = /^[23456789CJKLMPFT]{10}$/;
@@ -106,7 +106,11 @@ export function App() {
           {result ? <div className="result-content">
             <span className="result-label">Your DIGIPIN</span><div className="code-display"><img src="/digipin-logo.png" alt="DIGIPIN" /><strong>{formatCode(result.digipin)}</strong></div>
             <div className="coordinates"><span><small>Latitude</small>{Number(result.latitude).toFixed(6)}</span><span><small>Longitude</small>{Number(result.longitude).toFixed(6)}</span></div>
-            <div className="result-actions"><button onClick={copy}>{copied ? <Check size={17} /> : <Clipboard size={17} />}{copied ? 'Copied' : 'Copy code'}</button><button onClick={share}><Share2 size={17} /> Share</button><a href={`https://www.openstreetmap.org/?mlat=${result.latitude}&mlon=${result.longitude}#map=18/${result.latitude}/${result.longitude}`} target="_blank" rel="noreferrer" title="Open location on map"><ExternalLink size={18} /></a></div>
+            <div className="result-actions"><button onClick={copy}>{copied ? <Check size={17} /> : <Clipboard size={17} />}{copied ? 'Copied' : 'Copy code'}</button><button onClick={share}><Share2 size={17} /> Share</button></div>
+            <div className="map-actions">
+              <a href={`https://www.openstreetmap.org/?mlat=${result.latitude}&mlon=${result.longitude}#map=18/${result.latitude}/${result.longitude}`} target="_blank" rel="noreferrer"><Map size={17} /> OpenStreetMap <ExternalLink size={14} /></a>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${result.latitude}%2C${result.longitude}`} target="_blank" rel="noreferrer"><MapPin size={17} /> Google Maps <ExternalLink size={14} /></a>
+            </div>
           </div> : <div className="empty-result"><span><MapPin size={26} /></span><h2>Your precise address<br />will appear here</h2><p>DIGIPIN identifies an area of approximately 4 × 4 metres.</p></div>}
         </div>
       </section>
