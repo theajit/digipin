@@ -37,3 +37,4 @@ Coordinates are validated against the supported grid (latitude `2.5` to `38.5`, 
 
 This UI is intentionally maintained separately from the DIGIPIN API. Configure the backend URL through `VITE_API_BASE_URL` and keep API changes in the backend repository.
 
+Built with love on [India Post's open-source DIGIPIN](https://github.com/INDIAPOST-gov/digipin).

@@ -117,6 +117,10 @@ export function App() {
 
       {history.length > 0 && <section className="recent"><div><span className="eyebrow">This session</span><h2>Recent locations</h2></div><div className="recent-list">{history.map(item => <button key={item.digipin} onClick={() => selectHistory(item)}><MapPin size={16} /><strong>{formatCode(item.digipin)}</strong><span>{Number(item.latitude).toFixed(4)}, {Number(item.longitude).toFixed(4)}</span><ExternalLink size={15} /></button>)}</div></section>}
     </main>
-    <footer><span>Built by <b>Pin Code Cafe</b></span><span>DIGIPIN is an initiative of the Department of Posts, Government of India.</span></footer>
+    <footer>
+      <span>Built by <b>Pin Code Cafe</b></span>
+      <a href="https://github.com/INDIAPOST-gov/digipin" target="_blank" rel="noreferrer">Built with love on India Post's open-source DIGIPIN <ExternalLink size={13} /></a>
+      <span>DIGIPIN is an initiative of the Department of Posts, Government of India.</span>
+    </footer>
   </div>;
 }
