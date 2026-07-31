@@ -28,8 +28,10 @@ export function App() {
     return latitude !== '' && longitude !== '' && Number.isFinite(lat) && Number.isFinite(lng) && lat >= 2.5 && lat <= 38.5 && lng >= 63.5 && lng <= 99.5;
   }, [latitude, longitude]);
   const validCode = ALPHABET.test(digipin);
-  const normalizedPlusCode = plusCode.trim().toUpperCase().replace(/\s+/g, '');
-  const validPlusCode = plusCodeCodec.isFull(normalizedPlusCode) && plusCodeCodec.isValid(normalizedPlusCode);
+  const plusCodeInput = plusCode.trim().toUpperCase();
+  const [plusCodePart = '', ...localityParts] = plusCodeInput.split(/[\s,]+/);
+  const plusCodeLocality = localityParts.join(' ').trim();
+  const validPlusCode = (plusCodeCodec.isFull(plusCodePart) && plusCodeCodec.isValid(plusCodePart)) || (plusCodeCodec.isShort(plusCodePart) && plusCodeLocality.length > 1);
 
   const saveResult = (next: Result) => {
     setResult(next);
@@ -43,8 +45,16 @@ export function App() {
       let body: { latitude: number; longitude: number } | { digipin: string };
       let plusCoordinates: { latitude: string; longitude: string } | null = null;
       if (mode === 'pluscode') {
-        if (!plusCodeCodec.isFull(normalizedPlusCode)) throw new Error('Enter a full Plus Code. Short codes need a locality, such as a city name.');
-        const area = plusCodeCodec.decode(normalizedPlusCode);
+        let fullPlusCode = plusCodePart;
+        if (plusCodeCodec.isShort(plusCodePart)) {
+          if (!plusCodeLocality) throw new Error('Add the locality after the short Plus Code, for example JJFH+MG Dhenkanal.');
+          const localityResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=in&q=${encodeURIComponent(plusCodeLocality)}`, { headers: { 'Accept-Language': 'en' } });
+          if (!localityResponse.ok) throw new Error('The locality lookup service is unavailable. Try a full Plus Code.');
+          const places = await localityResponse.json();
+          if (!Array.isArray(places) || places.length === 0) throw new Error('Locality not found. Add the district or state, or use a full Plus Code.');
+          fullPlusCode = plusCodeCodec.recoverNearest(plusCodePart, Number(places[0].lat), Number(places[0].lon));
+        }
+        const area = plusCodeCodec.decode(fullPlusCode);
         const decodedLatitude = area.latitudeCenter;
         const decodedLongitude = area.longitudeCenter;
         if (decodedLatitude < 2.5 || decodedLatitude > 38.5 || decodedLongitude < 63.5 || decodedLongitude > 99.5) throw new Error('This Plus Code is outside the supported DIGIPIN grid.');
@@ -114,8 +124,8 @@ export function App() {
               </div>
               <p className="field-note">Coverage: 2.5°–38.5° N, 63.5°–99.5° E</p>
             </> : mode === 'decode' ? <label className="code-field">DIGIPIN<input autoFocus maxLength={10} value={digipin} onChange={e => setDigipin(e.target.value.toUpperCase().replace(/[^23456789CJKLMPFT]/g, ''))} placeholder="4T396F42L7" /><span>{digipin.length}/10</span></label> : <>
-              <label className="code-field">Full Plus Code<input autoFocus value={plusCode} onChange={e => setPlusCode(e.target.value.toUpperCase())} placeholder="7JWV7JXX+XX" /></label>
-              <p className="field-note">Use the full global code. Short codes require a locality reference.</p>
+              <label className="code-field">Plus Code<input autoFocus value={plusCode} onChange={e => setPlusCode(e.target.value.toUpperCase())} placeholder="JJFH+MG Dhenkanal" /></label>
+              <p className="field-note">Enter a full code, or add a locality after a short code. Locality search uses OpenStreetMap.</p>
             </>}
             {error && <div className="error" role="alert">{error}</div>}
             <button className="primary" disabled={loading || (mode === 'encode' ? !validCoords : mode === 'decode' ? !validCode : !validPlusCode)}>{loading ? <RefreshCw className="spin" size={18} /> : mode === 'encode' ? <MapPin size={18} /> : mode === 'decode' ? <Compass size={18} /> : <Grid2X2 size={18} />}{loading ? 'Working…' : mode === 'encode' ? 'Generate DIGIPIN' : mode === 'decode' ? 'Decode location' : 'Convert to DIGIPIN'}</button>
