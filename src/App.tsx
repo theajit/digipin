@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, Clipboard, Coffee, Compass, ExternalLink, Grid2X2, LocateFixed, Map, MapPin, RefreshCw, Share2 } from 'lucide-react';
+import { Check, Clipboard, Compass, ExternalLink, Grid2X2, LocateFixed, Map, MapPin, RefreshCw, Share2 } from 'lucide-react';
 import { OpenLocationCode } from 'open-location-code';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
@@ -94,9 +94,10 @@ export function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <a className="brand" href="#" aria-label="Pin Code Cafe DIGIPIN home"><span className="brand-mark"><Coffee size={19} /></span><span>PIN CODE <b>CAFE</b></span></a>
+      <a className="brand" href="#" aria-label="Pin Code Cafe DIGIPIN home"><img src="/pin-code-cafe-logo.jpg" alt="Pin Code Cafe 759001" /></a>
       <div className="service"><span className="status-dot" /> DIGIPIN service online</div>
       <a className="docs-link" href={`${API_BASE.replace(/\/api$/, '')}/api-docs`} target="_blank" rel="noreferrer">API docs <ExternalLink size={14} /></a>
+      <a className="postal-brand" href="https://github.com/INDIAPOST-gov/digipin" target="_blank" rel="noreferrer" aria-label="India Post DIGIPIN repository"><img src="/india-post-logo.webp" alt="India Post" /></a>
     </header>
 
     <main>
