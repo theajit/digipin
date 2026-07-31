@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Check, Clipboard, Coffee, Compass, ExternalLink, LocateFixed, Map, MapPin, RefreshCw, Share2 } from 'lucide-react';
+import { Check, Clipboard, Coffee, Compass, ExternalLink, Grid2X2, LocateFixed, Map, MapPin, RefreshCw, Share2 } from 'lucide-react';
+import { OpenLocationCode } from 'open-location-code';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 const ALPHABET = /^[23456789CJKLMPFT]{10}$/;
-type Mode = 'encode' | 'decode';
+type Mode = 'encode' | 'decode' | 'pluscode';
 type Result = { digipin: string; latitude: string; longitude: string };
+const plusCodeCodec = new OpenLocationCode();
 
 const formatCode = (code: string) => code.length === 10 ? `${code.slice(0, 3)} ${code.slice(3, 7)} ${code.slice(7)}` : code;
 
@@ -13,6 +15,7 @@ export function App() {
   const [latitude, setLatitude] = useState('13.067526');
   const [longitude, setLongitude] = useState('80.270956');
   const [digipin, setDigipin] = useState('');
+  const [plusCode, setPlusCode] = useState('');
   const [result, setResult] = useState<Result | null>(null);
   const [history, setHistory] = useState<Result[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,6 +28,8 @@ export function App() {
     return latitude !== '' && longitude !== '' && Number.isFinite(lat) && Number.isFinite(lng) && lat >= 2.5 && lat <= 38.5 && lng >= 63.5 && lng <= 99.5;
   }, [latitude, longitude]);
   const validCode = ALPHABET.test(digipin);
+  const normalizedPlusCode = plusCode.trim().toUpperCase().replace(/\s+/g, '');
+  const validPlusCode = plusCodeCodec.isFull(normalizedPlusCode) && plusCodeCodec.isValid(normalizedPlusCode);
 
   const saveResult = (next: Result) => {
     setResult(next);
@@ -34,13 +39,25 @@ export function App() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
     try {
-      const endpoint = mode === 'encode' ? 'encode' : 'decode';
-      const body = mode === 'encode' ? { latitude: Number(latitude), longitude: Number(longitude) } : { digipin };
+      let endpoint = mode === 'decode' ? 'decode' : 'encode';
+      let body: { latitude: number; longitude: number } | { digipin: string };
+      let plusCoordinates: { latitude: string; longitude: string } | null = null;
+      if (mode === 'pluscode') {
+        if (!plusCodeCodec.isFull(normalizedPlusCode)) throw new Error('Enter a full Plus Code. Short codes need a locality, such as a city name.');
+        const area = plusCodeCodec.decode(normalizedPlusCode);
+        const decodedLatitude = area.latitudeCenter;
+        const decodedLongitude = area.longitudeCenter;
+        if (decodedLatitude < 2.5 || decodedLatitude > 38.5 || decodedLongitude < 63.5 || decodedLongitude > 99.5) throw new Error('This Plus Code is outside the supported DIGIPIN grid.');
+        plusCoordinates = { latitude: decodedLatitude.toFixed(6), longitude: decodedLongitude.toFixed(6) };
+        body = { latitude: decodedLatitude, longitude: decodedLongitude };
+      } else {
+        body = mode === 'encode' ? { latitude: Number(latitude), longitude: Number(longitude) } : { digipin };
+      }
       const response = await fetch(`${API_BASE}/digipin/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
-      const next = mode === 'encode'
-        ? { digipin: data.digipin, latitude, longitude }
+      const next = mode !== 'decode'
+        ? { digipin: data.digipin, latitude: plusCoordinates?.latitude ?? latitude, longitude: plusCoordinates?.longitude ?? longitude }
         : { digipin, latitude: String(data.latitude), longitude: String(data.longitude) };
       saveResult(next);
     } catch (err) { setError(err instanceof Error ? err.message : 'Unable to reach the DIGIPIN service.'); }
@@ -83,10 +100,11 @@ export function App() {
           <div className="segmented" aria-label="Conversion mode">
             <button className={mode === 'encode' ? 'active' : ''} onClick={() => { setMode('encode'); setError(''); }}><MapPin size={17} /> Generate</button>
             <button className={mode === 'decode' ? 'active' : ''} onClick={() => { setMode('decode'); setError(''); }}><Compass size={17} /> Decode</button>
+            <button className={mode === 'pluscode' ? 'active' : ''} onClick={() => { setMode('pluscode'); setError(''); }}><Grid2X2 size={17} /> Plus Code</button>
           </div>
 
           <form onSubmit={submit}>
-            <div className="form-heading"><h2>{mode === 'encode' ? 'Where are you?' : 'Enter a DIGIPIN'}</h2><p>{mode === 'encode' ? 'Use your location or enter coordinates.' : 'Use the continuous 10-character code.'}</p></div>
+            <div className="form-heading"><h2>{mode === 'encode' ? 'Where are you?' : mode === 'decode' ? 'Enter a DIGIPIN' : 'Convert a Plus Code'}</h2><p>{mode === 'encode' ? 'Use your location or enter coordinates.' : mode === 'decode' ? 'Use the continuous 10-character code.' : 'Turn a full Google Plus Code into a DIGIPIN.'}</p></div>
             {mode === 'encode' ? <>
               <button type="button" className="locate-button" onClick={locate} disabled={locating}><LocateFixed size={18} className={locating ? 'spin' : ''} />{locating ? 'Finding your location…' : 'Use my current location'}</button>
               <div className="divider"><span>or enter manually</span></div>
@@ -95,9 +113,12 @@ export function App() {
                 <label>Longitude<input inputMode="decimal" value={longitude} onChange={e => setLongitude(e.target.value)} placeholder="80.270956" /></label>
               </div>
               <p className="field-note">Coverage: 2.5°–38.5° N, 63.5°–99.5° E</p>
-            </> : <label className="code-field">DIGIPIN<input autoFocus maxLength={10} value={digipin} onChange={e => setDigipin(e.target.value.toUpperCase().replace(/[^23456789CJKLMPFT]/g, ''))} placeholder="4T396F42L7" /><span>{digipin.length}/10</span></label>}
+            </> : mode === 'decode' ? <label className="code-field">DIGIPIN<input autoFocus maxLength={10} value={digipin} onChange={e => setDigipin(e.target.value.toUpperCase().replace(/[^23456789CJKLMPFT]/g, ''))} placeholder="4T396F42L7" /><span>{digipin.length}/10</span></label> : <>
+              <label className="code-field">Full Plus Code<input autoFocus value={plusCode} onChange={e => setPlusCode(e.target.value.toUpperCase())} placeholder="7JWV7JXX+XX" /></label>
+              <p className="field-note">Use the full global code. Short codes require a locality reference.</p>
+            </>}
             {error && <div className="error" role="alert">{error}</div>}
-            <button className="primary" disabled={loading || (mode === 'encode' ? !validCoords : !validCode)}>{loading ? <RefreshCw className="spin" size={18} /> : mode === 'encode' ? <MapPin size={18} /> : <Compass size={18} />}{loading ? 'Working…' : mode === 'encode' ? 'Generate DIGIPIN' : 'Decode location'}</button>
+            <button className="primary" disabled={loading || (mode === 'encode' ? !validCoords : mode === 'decode' ? !validCode : !validPlusCode)}>{loading ? <RefreshCw className="spin" size={18} /> : mode === 'encode' ? <MapPin size={18} /> : mode === 'decode' ? <Compass size={18} /> : <Grid2X2 size={18} />}{loading ? 'Working…' : mode === 'encode' ? 'Generate DIGIPIN' : mode === 'decode' ? 'Decode location' : 'Convert to DIGIPIN'}</button>
           </form>
         </div>
 
