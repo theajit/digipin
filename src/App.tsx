@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Check, Clipboard, Compass, ExternalLink, Grid2X2, LocateFixed, Map, MapPin, RefreshCw, Share2 } from 'lucide-react';
 import { OpenLocationCode } from 'open-location-code';
 
