@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Check, Clipboard, Compass, ExternalLink, Grid2X2, LocateFixed, Map, MapPin, RefreshCw, Share2 } from 'lucide-react';
 import { OpenLocationCode } from 'open-location-code';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
 const ALPHABET = /^[23456789CJKLMPFT]{10}$/;
 type Mode = 'encode' | 'decode' | 'pluscode';
 type Result = { digipin: string; latitude: string; longitude: string };
@@ -150,7 +150,7 @@ export function App() {
       {history.length > 0 && <section className="recent"><div><span className="eyebrow">This session</span><h2>Recent locations</h2></div><div className="recent-list">{history.map(item => <button key={item.digipin} onClick={() => selectHistory(item)}><MapPin size={16} /><strong>{formatCode(item.digipin)}</strong><span>{Number(item.latitude).toFixed(4)}, {Number(item.longitude).toFixed(4)}</span><ExternalLink size={15} /></button>)}</div></section>}
     </main>
     <footer>
-      <span>Built by <b>Pin Code Cafe</b></span>
+      <a href="https://pincode.cafe" aria-label="Visit Pin Code Cafe">Built by <b>Pin Code Cafe</b></a>
       <a href="https://github.com/INDIAPOST-gov/digipin" target="_blank" rel="noreferrer">Built with love on India Post's open-source DIGIPIN <ExternalLink size={13} /></a>
       <span>DIGIPIN is an initiative of the Department of Posts, Government of India.</span>
     </footer>
