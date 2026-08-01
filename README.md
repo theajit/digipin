@@ -24,7 +24,7 @@ npm run preview
 
 The static production output is written to `dist/`.
 
-The canonical production URL is [pincode.cafe](https://pincode.cafe). Route `/api` on that domain to the DIGIPIN API service. A custom backend can instead be supplied at build time through `VITE_API_BASE_URL`.
+In production, route `/api` on the selected deployment domain to the DIGIPIN API service. A custom backend can instead be supplied at build time through `VITE_API_BASE_URL`.
 
 ## API compatibility
 
