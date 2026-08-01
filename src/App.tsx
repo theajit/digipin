@@ -94,7 +94,7 @@ export function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <a className="brand" href="#" aria-label="Pin Code Cafe DIGIPIN home"><img src="/pin-code-cafe-logo.jpg" alt="Pin Code Cafe 759001" /></a>
+      <a className="brand" href="https://pincode.cafe" aria-label="Back to Pin Code Cafe"><img src="/pin-code-cafe-logo.jpg" alt="Pin Code Cafe 759001" /></a>
       <div className="service"><span className="status-dot" /> DIGIPIN service online</div>
       <a className="docs-link" href={`${API_BASE.replace(/\/api$/, '')}/api-docs`} target="_blank" rel="noreferrer">API docs <ExternalLink size={14} /></a>
       <a className="postal-brand" href="https://github.com/INDIAPOST-gov/digipin" target="_blank" rel="noreferrer" aria-label="India Post DIGIPIN repository"><img src="/india-post-logo.webp" alt="India Post" /></a>
