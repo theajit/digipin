@@ -41,6 +41,15 @@ export function App() {
         {offerings.map(([number, title, copy, Icon]) => <article key={number as string}><span>{number as string}</span><Icon size={21} /><h3>{title as string}</h3><p>{copy as string}</p></article>)}
       </section>
 
+      <section className="local-flavour">
+        <div><p className="section-label">Famous in 759001</p><span className="bara-word">BARA</span></div>
+        <div><h2>Dhenkanal's<br />crisp local icon.</h2><p>Golden and crisp outside, remarkably soft within. Dhenkanal Bara carries the flavour of the neighbourhood in every bite.</p><span>Local favourite · Made for coffee</span></div>
+      </section>
+
+      <section className="postal-scroll" aria-label="India Post and Pin Code Cafe streetscape">
+        <div className="postal-scroll-copy"><img src="/india-post-logo.webp" alt="India Post" /><p>FROM PIN CODE<br />TO <strong>DIGIPIN.</strong></p><span>A familiar address, made precise.</span></div>
+      </section>
+
       <section className="digipin-section" id="digipin">
         <div className="postal-lockup"><img src="/india-post-logo.webp" alt="India Post" /><span>Powered by India's open-source geospatial addressing system</span></div>
         <div className="digipin-heading"><p className="section-label">Our precise address</p><h2>Find the pin.<br /><em>Skip the guesswork.</em></h2></div>
