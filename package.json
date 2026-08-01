@@ -9,12 +9,15 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@vitejs/plugin-react": "latest",
-        "lucide-react": "latest",
-        "open-location-code": "^1.0.3",
-        "react": "latest",
-        "react-dom": "latest",
-        "typescript": "latest",
-        "vite": "latest"
+        "@vitejs/plugin-react": "5.1.4",
+        "lucide-react": "1.28.0",
+        "open-location-code": "1.0.3",
+        "react": "19.2.8",
+        "react-dom": "19.2.8",
+        "typescript": "5.9.3",
+        "vite": "7.3.6"
+    },
+    "engines": {
+        "node": ">=20.19.0"
     }
 }
