@@ -1,17 +1,17 @@
 import React from 'react';
-import { ArrowDown, ArrowUpRight, Coffee, MapPin } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, BriefcaseBusiness, Coffee, Copy, Dices, ExternalLink, MapPin } from 'lucide-react';
 
 const offerings = [
-  ['01', 'Coffee', 'Made for slow starts, quick breaks, and one more cup.'],
-  ['02', 'Small plates', 'Familiar flavours served with a fresh point of view.'],
-  ['03', 'Good company', 'A neighbourhood table with room for every conversation.'],
+  ['01', 'Coffee', 'Made for slow starts, quick breaks, and one more cup.', Coffee],
+  ['02', 'Work', 'A change of scene for focused hours and bright ideas.', BriefcaseBusiness],
+  ['03', 'Games', 'Put the screens down, pick a side, and stay for another round.', Dices],
 ];
 
 export function App() {
   return <div className="site-shell">
     <header className="nav">
       <a href="#top" className="logo-link" aria-label="Pin Code Cafe home"><img src="/pin-code-cafe-logo.jpg" alt="Pin Code Cafe 759001" /></a>
-      <nav aria-label="Primary navigation"><a href="#cafe">The cafe</a><a href="#address">759001</a><a className="nav-cta" href="#opening">Opening soon <ArrowDown size={15} /></a></nav>
+      <nav aria-label="Primary navigation"><a href="#cafe">The cafe</a><a href="#address">759001</a><a href="#digipin">DIGIPIN</a><a className="nav-cta" href="https://digipin.pincode.cafe">Create DIGIPIN <ArrowUpRight size={15} /></a></nav>
     </header>
 
     <main id="top">
@@ -21,7 +21,7 @@ export function App() {
         <div className="hero-copy">
           <p>Arriving in Dhenkanal</p>
           <h1 id="hero-title">PIN CODE CAFÉ</h1>
-          <div className="hero-footer"><strong>COFFEE HAS A<br />NEW ADDRESS.</strong><span>759001</span></div>
+          <div className="hero-footer"><strong>COFFEE · WORK · GAMES</strong><span>759001</span></div>
         </div>
       </section>
 
@@ -38,12 +38,23 @@ export function App() {
       </section>
 
       <section className="offerings" aria-label="What to expect">
-        {offerings.map(([number, title, copy]) => <article key={number}><span>{number}</span><Coffee size={21} /><h3>{title}</h3><p>{copy}</p></article>)}
+        {offerings.map(([number, title, copy, Icon]) => <article key={number as string}><span>{number as string}</span><Icon size={21} /><h3>{title as string}</h3><p>{copy as string}</p></article>)}
+      </section>
+
+      <section className="digipin-section" id="digipin">
+        <div className="postal-lockup"><img src="/india-post-logo.webp" alt="India Post" /><span>Powered by India's open-source geospatial addressing system</span></div>
+        <div className="digipin-heading"><p className="section-label">Our precise address</p><h2>Find the pin.<br /><em>Skip the guesswork.</em></h2></div>
+        <div className="digipin-ticket">
+          <div className="digipin-code"><img src="/digipin-logo.png" alt="DIGIPIN" /><div><small>Pin Code Cafe DIGIPIN</small><strong>2MT MC3T JMK</strong></div></div>
+          <div className="digipin-coordinates"><span>20.624188° N</span><span>85.628813° E</span></div>
+          <div className="digipin-actions"><button onClick={() => navigator.clipboard.writeText('2MTMC3TJMK')}><Copy size={16} /> Copy DIGIPIN</button><a href="https://www.google.com/maps/search/?api=1&query=20.6241875%2C85.6288125" target="_blank" rel="noreferrer"><MapPin size={16} /> View location</a></div>
+        </div>
+        <a className="digipin-cta" href="https://digipin.pincode.cafe">Create a DIGIPIN for your location <ExternalLink size={17} /></a>
       </section>
 
       <section className="opening" id="opening">
         <div className="opening-photo" role="img" aria-label="Warm cafe counter and seating" />
-        <div className="opening-copy"><p className="section-label">Next stop</p><h2>Opening in<br />759001.</h2><p>The address, hours, and first pour will be announced here.</p><a href="#top">Back to the top <ArrowUpRight size={17} /></a></div>
+        <div className="opening-copy"><p className="section-label">Next stop</p><h2>Opening in<br />759001.</h2><p>Coffee for the pause. Tables for the work. Games for everything after.</p><a href="#top">Back to the top <ArrowUpRight size={17} /></a></div>
       </section>
     </main>
 
