@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Check, Clipboard, Compass, ExternalLink, Grid2X2, LocateFixed, Map, MapPin, RefreshCw, Share2 } from 'lucide-react';
+import { Check, ChevronDown, Clipboard, Compass, ExternalLink, Grid2X2, HelpCircle, LocateFixed, Map, MapPin, RefreshCw, Search, Share2 } from 'lucide-react';
 import { OpenLocationCode } from 'open-location-code';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
@@ -127,6 +127,14 @@ export function App() {
             </> : mode === 'decode' ? <label className="code-field">DIGIPIN<input autoFocus maxLength={10} value={digipin} onChange={e => setDigipin(e.target.value.toUpperCase().replace(/[^23456789CJKLMPFT]/g, ''))} placeholder="4T396F42L7" /><span>{digipin.length}/10</span></label> : <>
               <label className="code-field">Plus Code<input autoFocus value={plusCode} onChange={e => setPlusCode(e.target.value.toUpperCase())} placeholder="JJFH+MG Dhenkanal" /></label>
               <p className="field-note">Enter a full code, or add a locality after a short code. Locality search uses OpenStreetMap.</p>
+              <details className="plus-guide">
+                <summary><HelpCircle size={17} /> How to find a Plus Code <ChevronDown className="guide-chevron" size={16} /></summary>
+                <div className="guide-steps">
+                  <article><div className="guide-visual"><Search size={22} /><span className="guide-dot" /></div><span className="step-number">1</span><h3>Open Google Maps</h3><p>Open the app or visit <a href="https://maps.google.com" target="_blank" rel="noreferrer">maps.google.com</a>.</p></article>
+                  <article><div className="guide-visual"><MapPin size={24} /><span className="guide-sheet">Dropped pin</span></div><span className="step-number">2</span><h3>View Plus Code</h3><p>Drop a pin, then open the location sheet and find its Plus Code.</p></article>
+                  <article><div className="guide-visual"><Clipboard size={22} /><span className="guide-code">JJFH+MG</span></div><span className="step-number">3</span><h3>Copy code</h3><p>Copy the code with its locality, for example <strong>JJFH+MG Dhenkanal</strong>.</p></article>
+                </div>
+              </details>
             </>}
             {error && <div className="error" role="alert">{error}</div>}
             <button className="primary" disabled={loading || (mode === 'encode' ? !validCoords : mode === 'decode' ? !validCode : !validPlusCode)}>{loading ? <RefreshCw className="spin" size={18} /> : mode === 'encode' ? <MapPin size={18} /> : mode === 'decode' ? <Compass size={18} /> : <Grid2X2 size={18} />}{loading ? 'Working…' : mode === 'encode' ? 'Generate DIGIPIN' : mode === 'decode' ? 'Decode location' : 'Convert to DIGIPIN'}</button>
