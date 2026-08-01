@@ -11,7 +11,7 @@ export function App() {
   return <div className="site-shell">
     <header className="nav">
       <a href="#top" className="logo-link" aria-label="Pin Code Cafe home"><img src="/pin-code-cafe-logo.jpg" alt="Pin Code Cafe 759001" /></a>
-      <nav aria-label="Primary navigation"><a href="#cafe">The cafe</a><a href="#address">759001</a><a href="#digipin">DIGIPIN</a><a className="nav-cta" href="https://digipin.pincode.cafe">Create DIGIPIN <ArrowUpRight size={15} /></a></nav>
+      <nav aria-label="Primary navigation"><a href="#cafe">The cafe</a><a href="#address">759001</a><a href="#digipin">DIGIPIN</a><a className="nav-cta" href="https://digipin.pincode.cafe" target="_blank" rel="noreferrer">Create DIGIPIN <ArrowUpRight size={15} /></a></nav>
     </header>
 
     <main id="top">
@@ -58,7 +58,7 @@ export function App() {
           <div className="digipin-coordinates"><span>20.624188° N</span><span>85.628813° E</span></div>
           <div className="digipin-actions"><button onClick={() => navigator.clipboard.writeText('2MTMC3TJMK')}><Copy size={16} /> Copy DIGIPIN</button><a href="https://www.google.com/maps/search/?api=1&query=20.6241875%2C85.6288125" target="_blank" rel="noreferrer"><MapPin size={16} /> View location</a></div>
         </div>
-        <a className="digipin-cta" href="https://digipin.pincode.cafe">Create a DIGIPIN for your location <ExternalLink size={17} /></a>
+        <a className="digipin-cta" href="https://digipin.pincode.cafe" target="_blank" rel="noreferrer">Create a DIGIPIN for your location <ExternalLink size={17} /></a>
       </section>
 
       <section className="opening" id="opening">
