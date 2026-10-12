@@ -1,10 +1,10 @@
 # PinID — by Pin Code Café
 
-This dedicated folder contains the explicitly authorized Lite exception to [PR-00 architecture](../docs/PINID_ARCHITECTURE.md), not completion of PR-01–05. One `username@pincode`, one private confirmed location, invite enrollment and a random owner recovery credential. No public resolution, OAuth, consent grants, third parties, payments or KitchenOS. The existing DIGIPIN engine/routes remain unchanged; request logging is removed and middleware errors sanitized to prevent location/secret disclosure.
+This dedicated folder contains the explicitly authorized Lite exception to [PR-00 architecture](https://github.com/theajit/digipin/blob/pinid/docs/PINID_ARCHITECTURE.md), not completion of PR-01–05. One `username@pincode`, one private confirmed location, invite enrollment and a random owner recovery credential. No public resolution, OAuth, consent grants, third parties, payments or KitchenOS. The existing DIGIPIN engine/routes remain unchanged; the root runtime remains at its audited baseline. PinID has its own sanitized middleware and never sends private locations to the legacy API.
 
 ## Folder and brand
 
-Branch: `pinid`. Product host remains `name.pincode.cafe`; address identities remain `username@pincode`. This is an integrated module in the existing Node application, not a new microservice.
+Branch: `pinid`. Product host remains `name.pincode.cafe`; address identities remain `username@pincode`. This is a self-contained application in this repository: its own server, UI, API, dependencies and unmodified locally bundled DIGIPIN engine. The root DIGIPIN application runs independently.
 
 ```text
 PinID/
@@ -18,7 +18,7 @@ PinID/
   package.json  convenience start/test/invite scripts
 ```
 
-Install dependencies at the repository root with `npm ci --ignore-scripts`. Start the shared application with root `npm start`, or `npm --prefix PinID start` using a private `PinID/.env`. The latter invokes the same root server and preserves `/api/digipin`. Run all tests with root `npm test`; `npm --prefix PinID test` runs the PinID subset. Do not copy only this folder for deployment: it reuses the root dependencies and DIGIPIN engine.
+Copy or deploy only `PinID/`. Inside that folder run `npm ci --ignore-scripts`, `npm run check`, `npm test`, then `npm start` with private `.env` configuration. No root files or dependencies are needed. UI is `/`, private API is `/api`, and health is `/healthz`. The old `/pinid/api` prefix is retained as a compatibility alias on this server. The separate root server continues to serve `/api/digipin` unchanged.
 
 The visual family follows the live [DIGIPIN portal](https://digipin.pincode.cafe) and [194.194 Cult](https://cult.pincode.cafe): ink black, warm paper, strong borders, generous type and the existing café logo. PinID uses the DIGIPIN orange accent, rather than Cult's lime community accent. Fonts and brand assets are local/system-only; no analytics, remote font request or external image request is added to the private vault. See [branding decisions](docs/BRANDING.md) and [verification](docs/VERIFICATION.md).
 
@@ -30,11 +30,11 @@ Admin invitations are bearer credentials delivered privately after out-of-band r
 
 Sensitive labels/address/coordinates/DIGIPIN are encrypted together with AES-256-GCM, unique random nonce, HKDF-derived per-owner key and owner/location/version AAD. This is a documented beta substitute for PR-00 KMS envelope keys. A startup canary detects wrong encryption keys; key rotation/migration is not implemented. Keep the master key backed up outside the volume; losing it makes locations unrecoverable. Do not change it in-place. Rotating session/admin secrets invalidates sessions/admin access, not recovery verifiers.
 
-Alias tombstones prevent reuse after deletion. Delete removes live encrypted records and invalidates recovery/sessions; WAL/backups/audit may retain prior data until maintenance/retention expiry. No promise of immediate cryptographic erasure. Operators must set their contact, recipient-delivery process, audit/backup retention and privacy notice before inviting users. Lite UI links its own notice, not copied government-issued policies. Dependency vulnerabilities found in PR-00 remain; no blind upgrade was performed in this timebox. In particular, proxy trust remains disabled and yamljs is not used; review all advisories before a public release.
+Alias tombstones prevent reuse after deletion. Delete removes live encrypted records and invalidates recovery/sessions; WAL/backups/audit may retain prior data until maintenance/retention expiry. No promise of immediate cryptographic erasure. Operators must set their contact, recipient-delivery process, audit/backup retention and privacy notice before inviting users. Lite UI links its own notice, not copied government-issued policies. The independent PinID dependency install reported zero advisories on 2026-10-13. Legacy root dependency findings remain unchanged; proxy trust remains disabled in PinID.
 
 ## Configuration / storage gate
 
-Lite is disabled unless `PINID_LITE_ENABLED=true`. Disabled mode needs no storage/secrets and preserves the legacy API. Enabled mode refuses startup without:
+Lite is disabled unless `PINID_LITE_ENABLED=true`. Disabled mode needs no storage/secrets and returns 503; the separate legacy server is unaffected. Enabled mode refuses startup without:
 
 - `PINID_ORIGIN`: exact external HTTPS origin, normally `https://name.pincode.cafe`, no trailing slash/path.
 - `PINID_DATA_DIR`: existing absolute writable directory on a mounted durable host-local volume.
@@ -50,26 +50,25 @@ Local development only: `NODE_ENV=development`, `PINID_ALLOW_LOCAL_HTTP=true`, e
 
 Actual API hosting/replicas/storage/TLS remain unverified. Before enabling, confirm a single Node process and a durable host-local filesystem. Do not use PM2 cluster mode, autoscaling, replicas, serverless/ephemeral disks or network/NFS volumes. No deployment is performed here.
 
-1. Install Node 24 and run `npm ci --ignore-scripts` in this checkout.
+1. Install Node 24 and run `npm ci --ignore-scripts` inside `PinID/`.
 2. Create a restricted persistent directory outside the checkout, for example `/var/lib/pinid-lite`, owned by the service account with mode 0700. On Windows, use a durable absolute local directory with restrictive ACLs. Create `.pinid-durable-volume` inside it containing `pinid-lite-local-volume-v1`; restrict the marker to the service account.
 3. Configure the required secrets in your service manager or private `.env`. Set `PINID_DATA_DIR` to that directory. Verify storage survives service restarts before setting both storage confirmation flags true.
-4. Start through the existing Node service manager using exactly one process: `NODE_ENV=production npm start`. On PowerShell set environment variables separately, then use `npm.cmd start`. Restrict port 5000 to the trusted proxy/firewall; external access must use HTTPS.
-5. Route `https://name.pincode.cafe/pinid/` and the API paths to this Node process. Optionally redirect site root to `/pinid/`. Disable proxy request-body/query/cookie/authorization logging, analytics and caching. Rate limits deliberately use socket-peer IP, so reverse proxy users share narrow-beta quotas.
+4. Start through the existing Node service manager using exactly one process: `NODE_ENV=production npm start`. On PowerShell set environment variables separately, then use `npm.cmd start`. Restrict port 5001 to the trusted proxy/firewall; external access must use HTTPS.
+5. Route the whole `https://name.pincode.cafe` host to this Node process. Bind `PINID_HOST=127.0.0.1` (default) behind a local trusted proxy; use an explicit interface only when needed. Disable proxy request-body/query/cookie/authorization logging, analytics and caching. Rate limits deliberately use socket-peer IP, so reverse proxy users share narrow-beta quotas.
 6. Restart the actual service using a synthetic invited account and verify recovery plus decrypted retrieval. A green health endpoint alone does not prove durable storage. If the existing platform cannot retain a safe local directory, leave Lite disabled and use the full PostgreSQL design.
 
 ## Health / smoke / invitation generation
 
 ```sh
 curl --fail https://name.pincode.cafe/healthz
-curl --fail https://name.pincode.cafe/pinid/api/health
-curl --fail -H 'Content-Type: application/json' -d '{"latitude":12.972579,"longitude":77.592015}' https://name.pincode.cafe/api/digipin/encode
+curl --fail https://name.pincode.cafe/api/health
 ```
 
-Expected encoder `4P3JK83M28`; `/healthz` must say Lite enabled. Use a private admin terminal and run `node PinID/scripts/invite.js` from the repository root with configured environment, or `npm --prefix PinID run invite` with `PinID/.env`, to generate a 48-hour invitation (token displayed once). Do not send admin secret to the browser. Deliver invitation separately from the enrollment site URL; never put it in a URL/query. Open `/pinid/`, claim a synthetic alias, confirm location and save the owner credential. Sign out, return using it, update/export/delete, restart service and recover again. Admin CLI output is intentional one-time credential delivery; never pipe it to shared logs.
+A confirmed location at 12.972579,77.592015 produces `4P3JK83M28`; `/healthz` must say Lite enabled. Use a private admin terminal and run `node scripts/invite.js` inside `PinID/` with configured environment, or `npm --prefix PinID run invite` with `PinID/.env`, to generate a 48-hour invitation (token displayed once). Do not send admin secret to the browser. Deliver invitation separately from the enrollment site URL; never put it in a URL/query. Open `/`, claim a synthetic alias, confirm location and save the owner credential. Sign out, return using it, update/export/delete, restart service and recover again. Admin CLI output is intentional one-time credential delivery; never pipe it to shared logs.
 
 ## API contract
 
-Base `/pinid/api`; errors `{error:{code}}`, no-store responses. No query parameters. JSON max 8 KB, strict field validation. Origin required for POST/PUT/DELETE. Owner writes also require `X-PinID-CSRF` from enrollment/recovery or GET me. Cookie is the only owner authentication, not a URL credential or supplied owner UUID. API returns location only to its owner. There is no public alias search.
+Base `/api`; errors `{error:{code}}`, no-store responses. No query parameters. JSON max 8 KB, strict field validation. Origin required for POST/PUT/DELETE. Owner writes also require `X-PinID-CSRF` from enrollment/recovery or GET me. Cookie is the only owner authentication, not a URL credential or supplied owner UUID. API returns location only to its owner. There is no public alias search.
 
 | Method/path | Auth / body / response |
 | --- | --- |
@@ -90,10 +89,10 @@ Rate windows persist across restarts: enrollment/recovery/admin ten attempts per
 
 ## Tests, backups, rollback
 
-Implementation verification: Node 24.20.0/npm 10.5.1, JavaScript/OpenAPI checks passed; complete regression suite passed 37 tests with two preexisting legacy TODOs before the additional separate-process restart check. SQLite reopening, owner recovery and second-writer refusal were executed. No live deployment, hosting durability inspection or visual browser QA is claimed. Early Windows cleanup-hook failures were corrected before the successful final run.
+Executed on Node 24.20.0: independent PinID syntax checks and 24 tests passed; line coverage 98.91%. Separate root checks and 29 regression tests passed, with two preexisting audit TODOs. Tests include process restart, encrypted storage, replay/races and cross-owner denial. See [verification](docs/VERIFICATION.md) for local browser evidence and limits.
 
 Run `npm ci --ignore-scripts`, `npm run check`, `npm test`, `npm run test:coverage`. Tests use real temporary SQLite and HTTP endpoints: expiration/replay, normalized uniqueness/parallel registration, finite input/confirmation, AES tampering/owner binding, cross-owner read/write/delete, session expiry/recovery/logout, wrong-key fail-closed, restart persistence, migrations and second-writer denial. No live deployment success is claimed.
 
 Before backup, stop the single application cleanly; archive the entire persistent directory including SQLite sidecars to encrypted, access-controlled backup storage. Keep encryption keys separately. Restore only to isolated staging, verify recovery/decryption and apply deletion/revocation records before serving traffic. Do not copy a live SQLite file without a coordinated SQLite backup mechanism. Do not delete the persistent directory during rollback.
 
-Rollback: stop Lite, set `PINID_LITE_ENABLED=false`, retain protected database/keys and deploy prior image or this build with Lite disabled. Legacy encoder stays available. The Lite database is separate/additive; no existing production records are migrated. Re-enabling a restored old snapshot may revive credentials/records; reconcile deletion/revocation before doing so. No downgrade/destructive migration is supplied.
+Rollback: stop Lite, set `PINID_LITE_ENABLED=false`, retain protected database/keys and restore the prior PinID release or leave Lite disabled. Keep the independent DIGIPIN service running. The Lite database is separate/additive; no existing production records are migrated. Re-enabling a restored old snapshot may revive credentials/records; reconcile deletion/revocation before doing so. No downgrade/destructive migration is supplied.

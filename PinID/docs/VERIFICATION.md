@@ -1,5 +1,15 @@
 # PinID Lite evidence policy
 
+## Current standalone verification — 2026-10-13
+
+`PinID/` now runs independently. Root server/app/package/lockfile/check script were restored to PR-00 baseline. The earlier integrated-folder entries below describe prior revisions only.
+
+Executed: PinID syntax checks and coverage tests: 24 passed, zero failures, 98.91% line coverage. Root checks and DIGIPIN regression suite: 29 passed, two existing audit TODOs. Copied only PinID source to ignored `test-data/isolated-pinid`, excluding dependencies, secrets and generated data; independent `npm ci --ignore-scripts`, syntax checks and all 24 tests passed there. Clean install reported zero dependency advisories.
+
+Started the isolated copy's actual `server.js` on local port 43253 with synthetic development secrets and explicit SQLite storage gate. Edge loaded `/` and its own branded assets/API paths. Actual UI screenshot: root ignored `test-data/evidence/pinid-standalone-ui.jpg`. Prior per-item screenshots below remain evidence of the earlier MVP flow. No production deployment, external TLS, real-device GPS or production storage durability is claimed.
+
+Generated data can live in either root `/test-data/` or standalone `PinID/test-data/`; both are Git-ignored. Deploy only PinID, install its dependencies, retain its configured durable directory and keys, and run one process. Rollback stops/restores only PinID; the independent DIGIPIN server is unaffected.
+
 Generated test data belongs in the Git-ignored `/test-data/` directory: SQLite files, disposable credentials, captured test logs, reports and screenshots. Do not use production data or credentials. Published official reference vectors remain tracked test source, not generated/private data.
 
 Run `npm test` to create isolated `test-data/runs/pinid-lite-*` fixtures. They are retained for local diagnosis and never uploaded to GitHub. Test close hooks release database connections. Remove an individual run only after its processes have exited and after verifying the resolved path is inside this directory.

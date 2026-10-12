@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en-IN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fffdf8"><meta name="description" content="PinID by Pin Code Café. One memorable address handle, one private location, and control that stays with you."><title>PinID | Pin Code Café</title><link rel="stylesheet" href="/pinid/style.css"><script src="/pinid/app.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fffdf8"><meta name="description" content="PinID by Pin Code Café. One memorable address handle, one private location, and control that stays with you."><title>PinID | Pin Code Café</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
 <body><div class="app-shell">
 <nav class="topbar" aria-label="Pin Code Café family">
-  <a class="cafe-logo" href="https://pincode.cafe" target="_blank" rel="noreferrer"><img src="/pinid/assets/pin-code-cafe-logo.jpg" alt="Pin Code Café"></a>
-  <a class="product-wordmark" href="/pinid/">PinID<span>YOUR PRIVATE ADDRESS</span></a>
+  <a class="cafe-logo" href="https://pincode.cafe" target="_blank" rel="noreferrer"><img src="/assets/pin-code-cafe-logo.jpg" alt="Pin Code Café"></a>
+  <a class="product-wordmark" href="/">PinID<span>YOUR PRIVATE ADDRESS</span></a>
   <div class="family-links"><a href="https://digipin.pincode.cafe" target="_blank" rel="noreferrer">DIGIPIN ↗</a><a href="https://cult.pincode.cafe" target="_blank" rel="noreferrer">194.194 CULT ↗</a><span class="beta-status">PRIVATE BETA</span></div>
 </nav>
 <main>
@@ -16,7 +16,7 @@
   <noscript><p class="notice">JavaScript is required to use this private beta. Forms are disabled to protect your credentials.</p></noscript>
   <section id="access">
     <div class="grid">
-      <form id="enroll" method="post" action="/pinid/api/enroll"><span class="section-label">01 · CLAIM YOUR NAME</span><h2>Claim your PinID</h2><p>Received an invitation? Paste it here. It expires and can be used once.</p>
+      <form id="enroll" method="post" action="/api/enroll"><span class="section-label">01 · CLAIM YOUR NAME</span><h2>Claim your PinID</h2><p>Received an invitation? Paste it here. It expires and can be used once.</p>
         <label>Invitation token<input name="invitation" type="password" autocomplete="off" required maxlength="43"></label>
         <label>Username<span class="username"><input name="username" autocomplete="username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9_-]*[A-Za-z0-9]"><span>@pincode</span></span></label>
         <div class="location-editor">
@@ -29,21 +29,21 @@
         </div>
         <button type="submit" disabled>Claim identity & save location</button>
       </form>
-      <form id="recover" method="post" action="/pinid/api/recover"><span class="section-label">02 · YOUR PRIVATE VAULT</span><h2>Return to your vault</h2><p>Your recovery credential is the key to your account. Keep it in a password manager. We cannot retrieve a lost credential.</p><label>Owner recovery credential<input name="credential" type="password" autocomplete="off" required maxlength="43"></label><button type="submit" disabled>Open my private dashboard</button><div class="vault-note"><span class="lock-mark" aria-hidden="true">↳</span><p>No public lookup.<br>No third-party address access.</p></div></form>
+      <form id="recover" method="post" action="/api/recover"><span class="section-label">02 · YOUR PRIVATE VAULT</span><h2>Return to your vault</h2><p>Your recovery credential is the key to your account. Keep it in a password manager. We cannot retrieve a lost credential.</p><label>Owner recovery credential<input name="credential" type="password" autocomplete="off" required maxlength="43"></label><button type="submit" disabled>Open my private dashboard</button><div class="vault-note"><span class="lock-mark" aria-hidden="true">↳</span><p>No public lookup.<br>No third-party address access.</p></div></form>
     </div>
   </section>
   <section id="recovery-once" hidden class="notice"><h2>Save your recovery credential now</h2><p>This credential is shown once. Anyone with it can access your private location. Save it in your password manager; never share it with a restaurant or delivery service.</p><code id="new-credential"></code><button id="saved-credential" type="button">I have saved it safely</button></section>
   <section id="dashboard" hidden>
     <div class="dashboard-title"><div><p>Your private identity</p><h2 id="alias"></h2></div><button id="logout" class="secondary" type="button">Sign out</button></div>
     <div class="card"><h3>Saved location</h3><dl id="saved-location"></dl><p>No one can resolve your address from your alias.</p><button id="delete-location" class="secondary" type="button">Delete saved location</button></div>
-    <form id="edit" method="post" action="/pinid/api/location"><h2>Update your private location</h2><div class="location-editor">
+    <form id="edit" method="post" action="/api/location"><h2>Update your private location</h2><div class="location-editor">
       <label>Private label<input name="label" required maxlength="60" value="Home"></label>
       <div class="coordinates"><label>Latitude<input name="latitude" type="number" step="any" min="2.5" max="38.5" required></label><label>Longitude<input name="longitude" type="number" step="any" min="63.5" max="99.5" required></label></div>
       <button type="button" class="secondary gps">Use my current location</button>
       <label>Address / flat / delivery notes (optional)<textarea name="address" maxlength="500" rows="2"></textarea></label>
       <p class="preview">Review the coordinates before saving.</p><label class="check"><input name="confirmed" type="checkbox" required>I confirm this selected location.</label>
     </div><button type="submit" disabled>Save private location</button></form>
-    <div class="card"><h3>Your data</h3><button id="export" class="secondary" type="button">Export my record</button><details><summary>Delete my identity</summary><p>Deletes the live location and revokes sessions/recovery access. Your alias stays reserved to prevent impersonation. Encrypted backups expire under the operator's retention policy.</p><form id="delete-user" method="post" action="/pinid/api/me"><label>Confirm with your recovery credential<input name="credential" type="password" autocomplete="off" maxlength="43" required></label><button type="submit" class="danger" disabled>Delete identity and location</button></form></details></div>
+    <div class="card"><h3>Your data</h3><button id="export" class="secondary" type="button">Export my record</button><details><summary>Delete my identity</summary><p>Deletes the live location and revokes sessions/recovery access. Your alias stays reserved to prevent impersonation. Encrypted backups expire under the operator's retention policy.</p><form id="delete-user" method="post" action="/api/me"><label>Confirm with your recovery credential<input name="credential" type="password" autocomplete="off" maxlength="43" required></label><button type="submit" class="danger" disabled>Delete identity and location</button></form></details></div>
   </section>
-  <footer><div class="footer-brand"><b>PinID</b><span>BY PIN CODE CAFÉ<br>ROOTED IN 759001 · DHENKANAL</span></div><p>DIGIPIN by the Department of Posts, IIT Hyderabad and NRSC, ISRO. Inspired by DHRUVA's digital addressing direction. Independently operated; no official India Post affiliation.</p><div class="footer-links"><a href="/pinid/privacy.html">PRIVACY & RECOVERY</a><a href="https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2147403&amp;lang=2&amp;reg=48" target="_blank" rel="noreferrer">ABOUT DHRUVA ↗</a></div></footer>
+  <footer><div class="footer-brand"><b>PinID</b><span>BY PIN CODE CAFÉ<br>ROOTED IN 759001 · DHENKANAL</span></div><p>DIGIPIN by the Department of Posts, IIT Hyderabad and NRSC, ISRO. Inspired by DHRUVA's digital addressing direction. Independently operated; no official India Post affiliation.</p><div class="footer-links"><a href="/privacy.html">PRIVACY & RECOVERY</a><a href="https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2147403&amp;lang=2&amp;reg=48" target="_blank" rel="noreferrer">ABOUT DHRUVA ↗</a></div></footer>
 </main></div></body></html>

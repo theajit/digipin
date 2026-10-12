@@ -1,10 +1,10 @@
 'use strict';
-require('dotenv').config();
+require('dotenv').config({ path: require('node:path').join(__dirname, '../.env'), quiet: true });
 async function main() {
   const origin = process.env.PINID_ORIGIN;
   const secret = process.env.PINID_ADMIN_SECRET;
   if (!origin || !secret) throw new Error('Configure PINID_ORIGIN and PINID_ADMIN_SECRET privately');
-  const response = await fetch(`${origin}/pinid/api/invitations`, { method: 'POST',
+  const response = await fetch(`${origin}/api/invitations`, { method: 'POST',
     headers: { Origin: origin, 'Content-Type': 'application/json', 'X-PinID-Admin': secret },
     body: JSON.stringify({ expires_in_seconds: 172800 }), signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error(`Invitation request failed (${response.status})`);

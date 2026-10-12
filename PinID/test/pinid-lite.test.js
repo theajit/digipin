@@ -11,7 +11,7 @@ const { loadConfig } = require('../src/config');
 const { createLite } = require('../src/routes');
 const { spawnSync } = require('node:child_process');
 function fixture(t) {
-  const root = path.resolve(__dirname, '../../test-data/runs');
+  const root = path.resolve(__dirname, '../test-data/runs');
   fs.mkdirSync(root, { recursive: true });
   const directory = fs.mkdtempSync(path.join(root, 'pinid-lite-'));
   fs.writeFileSync(path.join(directory, '.pinid-durable-volume'), 'pinid-lite-local-volume-v1');
@@ -26,11 +26,11 @@ const loc = { latitude: 12.972579, longitude: 77.592015, confirmed: true, label:
 function enroll(service, username = 'ajit') { return service.enroll({ invitation: service.invite().invitation, username, location: loc }); }
 test('records and recovery survive separate Node process restarts', t => {
   const { env } = fixture(t);
-  const bootstrap = "const c=require('./PinID/src/config').loadConfig();const s=new(require('./PinID/src/service').Service)(c);";
-  const first = spawnSync(process.execPath, ['-e', bootstrap + "const r=s.enroll({invitation:s.invite().invitation,username:'restart-owner',location:{latitude:13,longitude:77,confirmed:true}});process.stdout.write(JSON.stringify({credential:r.recovery_credential,id:r.profile.id}));s.close();"], { cwd: path.resolve(__dirname, '../..'), env: { ...process.env, ...env }, encoding: 'utf8', timeout: 10000 });
+  const bootstrap = "const c=require('./src/config').loadConfig();const s=new(require('./src/service').Service)(c);";
+  const first = spawnSync(process.execPath, ['-e', bootstrap + "const r=s.enroll({invitation:s.invite().invitation,username:'restart-owner',location:{latitude:13,longitude:77,confirmed:true}});process.stdout.write(JSON.stringify({credential:r.recovery_credential,id:r.profile.id}));s.close();"], { cwd: path.resolve(__dirname, '..'), env: { ...process.env, ...env }, encoding: 'utf8', timeout: 10000 });
   assert.equal(first.status, 0, first.stderr);
   const enrolled = JSON.parse(first.stdout);
-  const second = spawnSync(process.execPath, ['-e', bootstrap + "const r=s.recover(process.env.TEST_RECOVERY);process.stdout.write(JSON.stringify({id:r.profile.id,digipin:r.profile.location.digipin}));s.close();"], { cwd: path.resolve(__dirname, '../..'), env: { ...process.env, ...env, TEST_RECOVERY: enrolled.credential }, encoding: 'utf8', timeout: 10000 });
+  const second = spawnSync(process.execPath, ['-e', bootstrap + "const r=s.recover(process.env.TEST_RECOVERY);process.stdout.write(JSON.stringify({id:r.profile.id,digipin:r.profile.location.digipin}));s.close();"], { cwd: path.resolve(__dirname, '..'), env: { ...process.env, ...env, TEST_RECOVERY: enrolled.credential }, encoding: 'utf8', timeout: 10000 });
   assert.equal(second.status, 0, second.stderr);
   const restored = JSON.parse(second.stdout); assert.equal(restored.id, enrolled.id); assert.match(restored.digipin, /^[23456789CJKLMPFT]{10}$/);
 });

@@ -1,6 +1,6 @@
 'use strict';
 const crypto = require('node:crypto');
-const { getDigiPin } = require('../../src/digipin');
+const { getDigiPin } = require('../vendor/indiapost/digipin');
 class LiteError extends Error {
   constructor(code, status = 400) { super(code); this.code = code; this.status = status; }
 }

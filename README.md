@@ -317,3 +317,7 @@ This project is licensed under the Apache License, Version 2.0 - see the [LICENS
 ## 📝 Release Information
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+
+## PinID private beta
+
+[PinID](PinID/README.md) is a self-contained UI/API application on branch `pinid`, with its own server, package lockfile and locally bundled DIGIPIN engine. Deploy only `PinID/` for `name.pincode.cafe`. The existing root DIGIPIN API runs independently and retains its audited behavior. PinID requires one process, durable local SQLite storage and configured secrets; no Docker is required.

@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 let csrf = ''; let profile = null;
 function message(text, error = false) { $('message').textContent = text; $('message').className = error ? 'error' : ''; }
 async function api(path, method = 'GET', body) {
-  const response = await fetch(`/pinid/api${path}`, { method, credentials: 'same-origin', cache: 'no-store',
+  const response = await fetch(`/api${path}`, { method, credentials: 'same-origin', cache: 'no-store',
     headers: { 'Content-Type': 'application/json', ...(csrf ? { 'X-PinID-CSRF': csrf } : {}) },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
   const value = response.status === 204 ? null : await response.json();
