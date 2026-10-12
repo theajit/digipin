@@ -12,7 +12,7 @@ class Repository {
       this.db = new DatabaseSync(path.join(directory, 'pinid.sqlite'));
       this.db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000; PRAGMA secure_delete=ON;');
       this.db.exec('CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY, checksum TEXT NOT NULL) STRICT');
-      const sql = fs.readFileSync(path.join(__dirname, 'migrations/001.sql'), 'utf8').replace(/\r\n/g, '\n');
+      const sql = fs.readFileSync(path.join(__dirname, '../migrations/001.sql'), 'utf8').replace(/\r\n/g, '\n');
       const version = this.get('SELECT checksum FROM schema_migrations WHERE version=1');
       if (version && version.checksum !== hash(sql)) throw new Error('PinID Lite migration checksum mismatch');
       if (!version) this.transaction(() => {

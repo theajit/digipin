@@ -70,7 +70,7 @@ submit($('enroll'), async () => {
 submit($('recover'), async () => { const value = await api('/recover', 'POST', { credential: $('recover').elements.credential.value }); $('recover').reset(); show(value); message('Your private dashboard is open.'); });
 submit($('edit'), async () => { await api('/location', 'PUT', locationInput($('edit'))); show(await api('/me')); message('Location saved privately.'); });
 submit($('delete-user'), async () => { if (!confirm('Delete this identity and its live location?')) return; await api('/me', 'DELETE', { credential: $('delete-user').elements.credential.value }); clear(); message('Identity deleted. Sessions and recovery access revoked.'); });
-$('saved-credential').addEventListener('click', () => { $('new-credential').textContent = ''; $('recovery-once').hidden = true; });
+$('saved-credential').addEventListener('click', () => { $('new-credential').textContent = ''; $('recovery-once').hidden = true; message('Your recovery credential is saved. Your location stays private.'); });
 $('logout').addEventListener('click', async () => { try { await api('/logout', 'POST', {}); clear(); message('Signed out.'); } catch (error) { message(error.message, true); } });
 $('delete-location').addEventListener('click', async () => { if (!confirm('Delete this saved location?')) return; try { await api(`/locations/${profile.location.id}`, 'DELETE', {}); show(await api('/me')); message('Location deleted.'); } catch (error) { message(error.message, true); } });
 $('export').addEventListener('click', async () => {

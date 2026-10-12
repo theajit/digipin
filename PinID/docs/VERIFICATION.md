@@ -19,3 +19,11 @@ Browser testing found and fixed a global `location()` name collision that preven
 Saved actual UI evidence: `03-enrollment-ui.jpg`, `04-confirmation-ui.jpg`, `03-mobile-ui.jpg`, `07-recovery-ui.jpg`, `08-owner-dashboard-ui.jpg`, `09-signed-out-ui.jpg`. Ten additional `01-verification.jpg` through `10-verification.jpg` screenshots show executed-test evidence for the numbered MVP contract. These are test-report screenshots, not product UI claims. No live credentials are included.
 
 Not verified: real-device GPS acquisition/permission, current production topology, durable production volume, live deployment and external TLS/proxy configuration. Manual location entry was verified. Screenshots and test records remain local and are not attached to the public PR.
+
+## PinID folder and branding — branch `pinid`
+
+Moved the backend, migration, UI, tests, CLI and documentation under `PinID/`. Root server continues to mount the same `/pinid` API/UI; legacy `/api/digipin` and its engine remain unchanged. All 38 tests passed (2 preexisting TODOs) after relocation, including real SQLite and separate-process persistence. Root JavaScript/OpenAPI checks and diff whitespace checks passed. The folder has convenience start/test/invite scripts and uses root dependencies; no duplicate database or new service is introduced.
+
+Inspected live DIGIPIN and Cult HTML/CSS. Matched their ink/warm-paper palette, bold type, italic emphasis and crisp borders, using the local café logo and DIGIPIN orange. Browser enrollment on the new tree again produced `ajit@pincode` and `4P3JK83M28`. No browser JavaScript errors were observed. A 390px viewport had no horizontal overflow. Local screenshots: `pinid-branding-desktop.jpg`, `pinid-branding-mobile.jpg`, `pinid-branding-dashboard.jpg` in root ignored `test-data/evidence/`.
+
+No source DB/key/migration format changes are required for this move. Rollback restores the previous module paths/UI and root mount references; preserve the persistent directory and secrets. No merge or deployment was performed.

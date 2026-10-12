@@ -5,3 +5,4 @@
 - For each completed UI/checklist item, show screenshot evidence from the actual running page. Backend/security items need executed assertions as well; label screenshots of test/API reports accurately.
 - Save local screenshots under `test-data/evidence/`, keep credentials out of screenshots, and state unverified items. Do not claim local evidence proves production deployment or host durability.
 - Use direct Node deployment for PinID Lite; do not add Docker unless explicitly requested.
+- PinID implementation belongs under `/PinID/`; keep the existing root DIGIPIN engine and API contracts intact. Maintain the Pin Code Café visual family and local assets without external font/analytics requests from the vault.

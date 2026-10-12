@@ -1,0 +1,12 @@
+{
+  "name": "pincode-cafe-pinid",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PinID private address beta in the Pin Code Cafe family",
+  "engines": { "node": ">=22.18.0" },
+  "scripts": {
+    "start": "node ../server.js",
+    "test": "node --test test/*.test.js",
+    "invite": "node scripts/invite.js"
+  }
+}

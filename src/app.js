@@ -14,9 +14,9 @@ const app = express();
 // PinID is deliberately mounted before legacy CORS/body/error middleware.
 // No request logger: URLs, credentials and coordinate payloads must stay private.
 app.disable('x-powered-by');
-const liteConfig = require('./pinid-lite/config').loadConfig();
+const liteConfig = require('../PinID/src/config').loadConfig();
 if (liteConfig) {
-  const lite = require('./pinid-lite/routes').createLite(liteConfig);
+  const lite = require('../PinID/src/routes').createLite(liteConfig);
   app.use('/pinid', lite.router);
   app.locals.pinidLite = lite.service;
 }

@@ -63,7 +63,7 @@ function createLite(config) {
   router.put('/api/locations/:id', (req, res) => res.json(service.saveLocation(req.ownerId, req.body, req.params.id)));
   router.delete('/api/locations/:id', (req, res) => { s.fields(req.body, []); service.deleteLocation(req.ownerId, req.params.id); res.sendStatus(204); });
   router.use('/api', (req, res) => res.status(404).json({ error: { code: 'NOT_FOUND' } }));
-  router.use(express.static(path.join(__dirname, 'public'), { index: 'index.html', dotfiles: 'deny', maxAge: 0 }));
+  router.use(express.static(path.join(__dirname, '../public'), { index: 'index.html', dotfiles: 'deny', maxAge: 0 }));
   router.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
     const status = error instanceof s.LiteError ? error.status : error.type === 'entity.too.large' ? 413 : error.type === 'entity.parse.failed' ? 400 : 503;

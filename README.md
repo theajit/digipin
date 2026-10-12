@@ -1,6 +1,7 @@
-## PinID planning (PR-00)
+## DIGIPIN API and PinID
 
-**PinID Lite MVP:** See [configuration, API, deployment and rollback](docs/PINID_LITE.md).
+**PinID Lite MVP:** The dedicated [PinID folder](PinID/README.md) contains its backend,
+UI, migrations, tests, scripts, branding notes and deployment instructions.
 The owner-only beta is disabled by default and requires confirmed durable single-writer
 storage and three independent secrets. No third-party resolution or integration.
 
@@ -11,8 +12,9 @@ verification. The upstream reference documentation below is retained for provena
 its government-issued privacy/disclaimer text must be replaced with independent
 operator notices before a PinID launch.
 
-PinID is proposed as invite-only `username@pincode` identity with a private address
-vault at `name.pincode.cafe`. No PinID runtime functionality is implemented in PR-00.
+PinID provides invite-only `username@pincode` identity with a private address vault
+intended for `name.pincode.cafe`. Its Lite beta is implemented in `PinID/` and is
+disabled by default. PR-00 established the planning and baseline tests below.
 Review the [architecture](docs/PINID_ARCHITECTURE.md),
 [threat model](docs/PINID_THREAT_MODEL.md),
 [migration plan](docs/PINID_MIGRATION_PLAN.md),

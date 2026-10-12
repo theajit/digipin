@@ -1,6 +1,26 @@
-# PinID Lite: narrow private beta
+# PinID — by Pin Code Café
 
-This is the explicitly authorized Lite exception to [PR-00 architecture](PINID_ARCHITECTURE.md), not completion of PR-01–05. One `username@pincode`, one private confirmed location, invite enrollment and a random owner recovery credential. No public resolution, OAuth, consent grants, third parties, payments or KitchenOS. The existing DIGIPIN engine/routes remain unchanged; request logging is removed and middleware errors sanitized to prevent location/secret disclosure.
+This dedicated folder contains the explicitly authorized Lite exception to [PR-00 architecture](../docs/PINID_ARCHITECTURE.md), not completion of PR-01–05. One `username@pincode`, one private confirmed location, invite enrollment and a random owner recovery credential. No public resolution, OAuth, consent grants, third parties, payments or KitchenOS. The existing DIGIPIN engine/routes remain unchanged; request logging is removed and middleware errors sanitized to prevent location/secret disclosure.
+
+## Folder and brand
+
+Branch: `pinid`. Product host remains `name.pincode.cafe`; address identities remain `username@pincode`. This is an integrated module in the existing Node application, not a new microservice.
+
+```text
+PinID/
+  src/          configuration, security, routes, services and SQLite repository
+  migrations/   numbered schema migration
+  public/       responsive UI and local Pin Code Café logo
+  test/         private vault, invitation, authorization and restart tests
+  scripts/      administrator invitation CLI
+  docs/         verification and branding decisions
+  .env.example  placeholder configuration
+  package.json  convenience start/test/invite scripts
+```
+
+Install dependencies at the repository root with `npm ci --ignore-scripts`. Start the shared application with root `npm start`, or `npm --prefix PinID start` using a private `PinID/.env`. The latter invokes the same root server and preserves `/api/digipin`. Run all tests with root `npm test`; `npm --prefix PinID test` runs the PinID subset. Do not copy only this folder for deployment: it reuses the root dependencies and DIGIPIN engine.
+
+The visual family follows the live [DIGIPIN portal](https://digipin.pincode.cafe) and [194.194 Cult](https://cult.pincode.cafe): ink black, warm paper, strong borders, generous type and the existing café logo. PinID uses the DIGIPIN orange accent, rather than Cult's lime community accent. Fonts and brand assets are local/system-only; no analytics, remote font request or external image request is added to the private vault. See [branding decisions](docs/BRANDING.md) and [verification](docs/VERIFICATION.md).
 
 ## Architecture differences and limits
 
@@ -22,7 +42,7 @@ Lite is disabled unless `PINID_LITE_ENABLED=true`. Disabled mode needs no storag
 - `PINID_SINGLE_WRITER=true` and `PINID_STORAGE_CONFIRMED=true`, operator assertions backed by a storage/restart check.
 - Three distinct `PINID_ENCRYPTION_KEY`, `PINID_SESSION_SECRET`, `PINID_ADMIN_SECRET`: each random 32-byte base64url.
 
-Generate each secret privately with `node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))"`. Store them in the platform secret manager or private `.env`; never Git, the database, image layers, URLs, browser localStorage or proxy/application logs. File mode 0600 for secret files and restricted volume permissions. `.env.pinid-lite.example` contains placeholders only.
+Generate each secret privately with `node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))"`. Store them in the platform secret manager or private `.env`; never Git, the database, image layers, URLs, browser localStorage or proxy/application logs. File mode 0600 for secret files and restricted volume permissions. `PinID/.env.example` contains placeholders only.
 
 Local development only: `NODE_ENV=development`, `PINID_ALLOW_LOCAL_HTTP=true`, exact localhost origin and the same explicit storage gate. Production cannot enable the HTTP exception. Creating a marker does not prove actual durability: verify the mount/restart before enabling users.
 
@@ -45,7 +65,7 @@ curl --fail https://name.pincode.cafe/pinid/api/health
 curl --fail -H 'Content-Type: application/json' -d '{"latitude":12.972579,"longitude":77.592015}' https://name.pincode.cafe/api/digipin/encode
 ```
 
-Expected encoder `4P3JK83M28`; `/healthz` must say Lite enabled. Use a private admin terminal and run `node scripts/pinid-lite-invite.js` with configured environment to generate a 48-hour invitation (token displayed once). Do not send admin secret to the browser. Deliver invitation separately from the enrollment site URL; never put it in a URL/query. Open `/pinid/`, claim a synthetic alias, confirm location and save the owner credential. Sign out, return using it, update/export/delete, restart service and recover again. Admin CLI output is intentional one-time credential delivery; never pipe it to shared logs.
+Expected encoder `4P3JK83M28`; `/healthz` must say Lite enabled. Use a private admin terminal and run `node PinID/scripts/invite.js` from the repository root with configured environment, or `npm --prefix PinID run invite` with `PinID/.env`, to generate a 48-hour invitation (token displayed once). Do not send admin secret to the browser. Deliver invitation separately from the enrollment site URL; never put it in a URL/query. Open `/pinid/`, claim a synthetic alias, confirm location and save the owner credential. Sign out, return using it, update/export/delete, restart service and recover again. Admin CLI output is intentional one-time credential delivery; never pipe it to shared logs.
 
 ## API contract
 

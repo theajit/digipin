@@ -18,7 +18,7 @@ function checkDirectory(directory) {
     }
   }
 }
-for (const directory of ['src', 'scripts', 'test']) checkDirectory(path.join(root, directory));
+for (const directory of ['src', 'scripts', 'test', 'PinID/src', 'PinID/scripts', 'PinID/test', 'PinID/public']) checkDirectory(path.join(root, directory));
 assert.equal(spawnSync(process.execPath, ['--check', path.join(root, 'server.js')]).status, 0);
 const document = YAML.parse(fs.readFileSync(path.join(root, 'swagger.yaml'), 'utf8'));
 assert.equal(document.openapi, '3.0.0');

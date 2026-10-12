@@ -5,8 +5,8 @@
   "main": "server.js",
   "engines": { "node": ">=22.18.0" },
   "scripts": {
-    "test": "node --test test/*.test.js",
-    "test:coverage": "node --test --experimental-test-coverage test/*.test.js",
+    "test": "node --test test/*.test.js PinID/test/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage test/*.test.js PinID/test/*.test.js",
     "check": "node scripts/check.js",
     "start": "node server.js",
     "dev": "nodemon server.js"
