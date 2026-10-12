@@ -2,6 +2,13 @@
 node_modules/
 .env
 .env.local
+.env.pinid-lite
+data/
+# Generated test records, disposable credentials, logs and screenshot evidence.
+/test-data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 .DS_Store
 logs
 *.log

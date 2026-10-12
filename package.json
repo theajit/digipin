@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "",
   "main": "server.js",
+  "engines": { "node": ">=22.18.0" },
   "scripts": {
     "test": "node --test test/*.test.js",
     "test:coverage": "node --test --experimental-test-coverage test/*.test.js",
