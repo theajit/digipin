@@ -1,10 +1,20 @@
 openapi: 3.0.0
 
 info:
-  title: DIGIPIN API by Department of Posts
+  title: Pin Code Cafe DIGIPIN API
   version: 2.0.0
   description: |
     DIGIPIN (Digital Postal Index Number) is India's National Geospatial Addressing Grid developed by the Department of Posts, Ministry of Communications, Government of India.
+
+    This independently operated API uses the open-source India Post DIGIPIN
+    implementation. It does not provide government identity/address verification
+    and does not claim official India Post affiliation. PinID endpoints are not
+    implemented in this baseline release.
+
+    Decoding returns the rounded grid-cell centre, not the original coordinates.
+    Legacy decoding accepts lowercase and trims outer whitespace. Internal spaces
+    and separators are rejected. Legacy coordinate coercion and default Express
+    error responses have known limitations documented in docs/PINID_AUDIT.md.
 
     This API provides services for:
 
@@ -50,7 +60,9 @@ paths:
           schema:
             type: number
             format: double
-            example: 13.067526
+            minimum: 2.5
+            maximum: 38.5
+            example: 13.11179621
 
         - name: longitude
           in: query
@@ -59,7 +71,9 @@ paths:
           schema:
             type: number
             format: double
-            example: 80.270956
+            minimum: 63.5
+            maximum: 99.5
+            example: 80.20264269
 
       responses:
 
@@ -105,8 +119,8 @@ paths:
             schema:
               $ref: '#/components/schemas/EncodeRequest'
             example:
-              latitude: 13.067526
-              longitude: 80.270956
+              latitude: 13.11179621
+              longitude: 80.20264269
 
       responses:
 
@@ -171,8 +185,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/DecodeResponse'
               example:
-                latitude: "13.067526"
-                longitude: "80.270956"
+                latitude: "13.111780"
+                longitude: "80.202635"
 
         '400':
           description: Invalid DIGIPIN
@@ -188,11 +202,7 @@ paths:
 
                 invalidCharacterSet:
                   value:
-                    error: "Invalid DIGIPIN. DIGIPIN must be a continuous 10-character string containing only approved DIGIPIN characters (2,3,4,5,6,7,8,9,C,J,K,L,M,P,F,T)."
-
-                invalidDecode:
-                  value:
-                    error: "Invalid DIGIPIN. Unable to decode the supplied DIGIPIN."
+                    error: "Invalid DIGIPIN. Only approved DIGIPIN characters (2,3,4,5,6,7,8,9,C,J,K,L,M,P,F,T) are permitted. Spaces, hyphens, and special characters are not allowed."
 
     post:
       tags:
@@ -221,8 +231,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/DecodeResponse'
               example:
-                latitude: "13.067526"
-                longitude: "80.270956"
+                latitude: "13.111780"
+                longitude: "80.202635"
 
         '400':
           description: Invalid DIGIPIN
@@ -238,11 +248,7 @@ paths:
 
                 invalidCharacterSet:
                   value:
-                    error: "Invalid DIGIPIN. DIGIPIN must be a continuous 10-character string containing only approved DIGIPIN characters (2,3,4,5,6,7,8,9,C,J,K,L,M,P,F,T)."
-
-                invalidDecode:
-                  value:
-                    error: "Invalid DIGIPIN. Unable to decode the supplied DIGIPIN."
+                    error: "Invalid DIGIPIN. Only approved DIGIPIN characters (2,3,4,5,6,7,8,9,C,J,K,L,M,P,F,T) are permitted. Spaces, hyphens, and special characters are not allowed."
 
 components:
 
@@ -257,14 +263,19 @@ components:
         latitude:
           type: number
           format: double
-          example: 13.067526
+          minimum: 2.5
+          maximum: 38.5
+          example: 13.11179621
         longitude:
           type: number
           format: double
-          example: 80.270956
+          minimum: 63.5
+          maximum: 99.5
+          example: 80.20264269
 
     EncodeResponse:
       type: object
+      required: [digipin]
       properties:
         digipin:
           type: string
@@ -284,10 +295,19 @@ components:
 
     DecodeResponse:
       type: object
+      required: [latitude, longitude]
       properties:
         latitude:
           type: string
-          example: "13.067526"
+          example: "13.111780"
         longitude:
           type: string
-          example: "80.270956"
+          example: "80.202635"
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Legacy route-handled error message. Parser and middleware errors may return HTML.
