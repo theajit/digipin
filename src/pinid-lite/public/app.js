@@ -21,6 +21,8 @@ function clear() {
   profile = null; csrf = ''; $('dashboard').hidden = true; $('access').hidden = false;
   $('recovery-once').hidden = true; $('new-credential').textContent = ''; $('alias').textContent = '';
   $('saved-location').replaceChildren(); $('edit').reset(); $('delete-user').reset();
+  $('enroll').reset(); $('recover').reset();
+  for (const form of [$('enroll'), $('edit')]) { form.dataset.source = 'manual'; updatePreview(form); }
 }
 function show(value) {
   profile = value; csrf = value.csrf || csrf; $('access').hidden = true; $('dashboard').hidden = false;
@@ -32,7 +34,7 @@ function show(value) {
   for (const name of ['label', 'latitude', 'longitude', 'address']) $('edit').elements[name].value = record?.[name] ?? (name === 'label' ? 'Home' : '');
   $('edit').elements.confirmed.checked = false; updatePreview($('edit'));
 }
-function location(form) {
+function locationInput(form) {
   return { label: form.elements.label.value, latitude: Number(form.elements.latitude.value), longitude: Number(form.elements.longitude.value),
     address: form.elements.address.value, confirmed: form.elements.confirmed.checked, source: form.dataset.source || 'manual' };
 }
@@ -61,12 +63,12 @@ function submit(form, work) {
   });
 }
 submit($('enroll'), async () => {
-  const form = $('enroll'); const value = await api('/enroll', 'POST', { invitation: form.elements.invitation.value, username: form.elements.username.value, location: location(form) });
+  const form = $('enroll'); const value = await api('/enroll', 'POST', { invitation: form.elements.invitation.value, username: form.elements.username.value, location: locationInput(form) });
   form.reset(); show(value); $('new-credential').textContent = value.recovery_credential; delete value.recovery_credential;
   $('recovery-once').hidden = false; message('Your private identity is ready. Save the credential now.');
 });
 submit($('recover'), async () => { const value = await api('/recover', 'POST', { credential: $('recover').elements.credential.value }); $('recover').reset(); show(value); message('Your private dashboard is open.'); });
-submit($('edit'), async () => { await api('/location', 'PUT', location($('edit'))); show(await api('/me')); message('Location saved privately.'); });
+submit($('edit'), async () => { await api('/location', 'PUT', locationInput($('edit'))); show(await api('/me')); message('Location saved privately.'); });
 submit($('delete-user'), async () => { if (!confirm('Delete this identity and its live location?')) return; await api('/me', 'DELETE', { credential: $('delete-user').elements.credential.value }); clear(); message('Identity deleted. Sessions and recovery access revoked.'); });
 $('saved-credential').addEventListener('click', () => { $('new-credential').textContent = ''; $('recovery-once').hidden = true; });
 $('logout').addEventListener('click', async () => { try { await api('/logout', 'POST', {}); clear(); message('Signed out.'); } catch (error) { message(error.message, true); } });
@@ -78,3 +80,4 @@ $('export').addEventListener('click', async () => {
 // Never retain private DOM values through a browser history snapshot.
 window.addEventListener('pagehide', clear);
 window.addEventListener('pageshow', () => { api('/me').then(show).catch(() => clear()); });
+for (const button of document.querySelectorAll('button[type="submit"]')) button.disabled = false;

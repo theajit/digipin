@@ -2,7 +2,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const { once } = require('node:events');
 const express = require('express');
@@ -12,15 +11,15 @@ const { loadConfig } = require('../src/pinid-lite/config');
 const { createLite } = require('../src/pinid-lite/routes');
 const { spawnSync } = require('node:child_process');
 function fixture(t) {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'pinid-lite-test-'));
+  const root = path.resolve(__dirname, '../test-data/runs');
+  fs.mkdirSync(root, { recursive: true });
+  const directory = fs.mkdtempSync(path.join(root, 'pinid-lite-'));
   fs.writeFileSync(path.join(directory, '.pinid-durable-volume'), 'pinid-lite-local-volume-v1');
   const env = { NODE_ENV: 'test', PINID_LITE_ENABLED: 'true', PINID_DATA_DIR: directory,
     PINID_SINGLE_WRITER: 'true', PINID_STORAGE_CONFIRMED: 'true', PINID_ORIGIN: 'https://pinid.test',
     PINID_ENCRYPTION_KEY: security.token(), PINID_SESSION_SECRET: security.token(), PINID_ADMIN_SECRET: security.token() };
   const config = loadConfig(env);
-  // Only files in the exclusively created test temp directory are cleaned up.
-  // Retain this isolated temporary fixture for diagnosis; service hooks close DBs.
-  // Windows cannot remove SQLite files before later registered close hooks run.
+  // Retain ignored generated data for diagnosis; service hooks close the DBs.
   return { config, env };
 }
 const loc = { latitude: 12.972579, longitude: 77.592015, confirmed: true, label: 'Private home', address: 'Synthetic unit 7' };
@@ -154,4 +153,11 @@ test('HTTP enrollment/recovery privacy, alias/replay races, CSRF and BOLA', asyn
   assert.ok(!(await publicPage.text()).includes(owner.value.alias));
   const malformed = await fetch(base + '/api/recover', { method: 'POST', headers: { Origin: config.origin, 'Content-Type': 'application/json' }, body: '{' });
   assert.equal(malformed.status, 400); assert.deepEqual(await malformed.json(), { error: { code: 'INVALID_JSON' } });
+  // Native form fallback must not accept credentials without the JSON flow.
+  const fallback = await fetch(base + '/api/recover', { method: 'POST', headers: { Origin: config.origin,
+    'Content-Type': 'application/x-www-form-urlencoded' }, body: 'credential=synthetic-invalid' });
+  assert.equal(fallback.status, 415);
+  const html = fs.readFileSync(path.join(__dirname, '../src/pinid-lite/public/index.html'), 'utf8');
+  for (const form of html.match(/<form\b[^>]*>/g)) assert.match(form, /method="post"/);
+  for (const button of html.match(/<button\b[^>]*type="submit"[^>]*>/g)) assert.match(button, /disabled/);
 });

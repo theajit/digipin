@@ -4,6 +4,8 @@ node_modules/
 .env.local
 .env.pinid-lite
 data/
+# Generated test records, disposable credentials, logs and screenshot evidence.
+/test-data/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
