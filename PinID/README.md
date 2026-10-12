@@ -1,10 +1,10 @@
 # PinID — by Pin Code Café
 
-This dedicated folder contains the explicitly authorized Lite exception to [PR-00 architecture](https://github.com/theajit/digipin/blob/pinid/docs/PINID_ARCHITECTURE.md), not completion of PR-01–05. One `username@pincode`, one private confirmed location, invite enrollment and a random owner recovery credential. No public resolution, OAuth, consent grants, third parties, payments or KitchenOS. The existing DIGIPIN engine/routes remain unchanged; the root runtime remains at its audited baseline. PinID has its own sanitized middleware and never sends private locations to the legacy API.
+This dedicated folder contains the explicitly authorized Lite exception to [PR-00 architecture](https://github.com/theajit/digipin/blob/pinid/docs/PINID_ARCHITECTURE.md), not completion of PR-01–05. One `username@pincode`, one private confirmed location, invite enrollment and a random owner recovery credential. No public resolution, OAuth, consent grants, third parties, payments or KitchenOS. The locally bundled DIGIPIN engine remains unchanged. Legacy API runtime/files are absent from this branch; other DIGIPIN branches and deployments remain independent.
 
 ## Folder and brand
 
-Branch: `pinid`. Product host remains `name.pincode.cafe`; address identities remain `username@pincode`. This is a self-contained application in this repository: its own server, UI, API, dependencies and unmodified locally bundled DIGIPIN engine. The root DIGIPIN application runs independently.
+Branch: `pinid`. Product host remains `name.pincode.cafe`; address identities remain `username@pincode`. This is a self-contained application in this repository: its own server, UI, API, dependencies and unmodified locally bundled DIGIPIN engine. The legacy DIGIPIN application remains on its own branches.
 
 ```text
 PinID/
@@ -18,7 +18,7 @@ PinID/
   package.json  convenience start/test/invite scripts
 ```
 
-Copy or deploy only `PinID/`. Inside that folder run `npm ci --ignore-scripts`, `npm run check`, `npm test`, then `npm start` with private `.env` configuration. No root files or dependencies are needed. UI is `/`, private API is `/api`, and health is `/healthz`. The old `/pinid/api` prefix is retained as a compatibility alias on this server. The separate root server continues to serve `/api/digipin` unchanged.
+Copy or deploy only `PinID/`. Inside that folder run `npm ci --ignore-scripts`, `npm run check`, `npm test`, then `npm start` with private `.env` configuration. No root files or dependencies are needed. UI is `/`, private API is `/api`, and health is `/healthz`. The old `/pinid/api` prefix is retained as a compatibility alias on this server. No `/api/digipin` endpoint is present in PinID.
 
 The visual family follows the live [DIGIPIN portal](https://digipin.pincode.cafe) and [194.194 Cult](https://cult.pincode.cafe): ink black, warm paper, strong borders, generous type and the existing café logo. PinID uses the DIGIPIN orange accent, rather than Cult's lime community accent. Fonts and brand assets are local/system-only; no analytics, remote font request or external image request is added to the private vault. See [branding decisions](docs/BRANDING.md) and [verification](docs/VERIFICATION.md).
 
@@ -47,6 +47,10 @@ Generate each secret privately with `node -e "process.stdout.write(require('node
 Local development only: `NODE_ENV=development`, `PINID_ALLOW_LOCAL_HTTP=true`, exact localhost origin and the same explicit storage gate. Production cannot enable the HTTP exception. Creating a marker does not prove actual durability: verify the mount/restart before enabling users.
 
 ## Direct Node deployment — no Docker
+
+For Dokploy, deploy branch `pinid` with build path `/PinID`; use the Node builder, `npm ci --ignore-scripts`, `npm run check`, and start `node server.js`. Node >=22.18 is required (24 recommended). Set `PINID_HOST=0.0.0.0`, `PORT=5001`, exact HTTPS `PINID_ORIGIN`, and route the domain to container port 5001. Mount a durable host-local directory at `/data` and provision the storage marker there before enabling. Use exactly one writer pinned to that host; stop the old writer before replacing it. Configure the three separate secrets privately; never put them in build commands. Do not deploy this branch into the existing DIGIPIN application.
+
+Listener failure exits with a generic message and status 1. Check `PINID_HOST` and port conflicts; the server only prints its bound address after the native listening event. It does not expose resolver errors or a stack trace.
 
 Actual API hosting/replicas/storage/TLS remain unverified. Before enabling, confirm a single Node process and a durable host-local filesystem. Do not use PM2 cluster mode, autoscaling, replicas, serverless/ephemeral disks or network/NFS volumes. No deployment is performed here.
 

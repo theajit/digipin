@@ -1,5 +1,13 @@
 # PinID Lite evidence policy
 
+## Listener fix and PinID-only branch
+
+The current branch removes the root DIGIPIN API runtime, root dependency manifests, Swagger, legacy API tests and legacy public documentation/images. Other branches retain their history and files. Historical PR-00 PinID audit documents remain. PinID retains only its required locally attributed engine and reference vectors; no public encoder/decoder endpoint exists.
+
+Startup now uses native HTTP server error/listening events separately. Regression tests execute actual `server.js` with a malformed hostname, occupied port and successful ephemeral bind. Invalid bind attempts exit 1 with a generic message and no success message/null-address stack. Negative API assertions verify unauthenticated denial and authenticated 404 for legacy encode/decode paths, plus absence of Swagger UI.
+
+Final executed results are saved locally in ignored `PinID/test-data/final-startup-tests.txt`; final counts and screenshot evidence are reported with the delivery. Deployment on the user's host is not verified here. Dokploy must bind `0.0.0.0` and route to port 5001. Stop the old writer before replacing it; preserve mounted storage and encryption keys during rollback.
+
 ## Current standalone verification — 2026-10-13
 
 `PinID/` now runs independently. Root server/app/package/lockfile/check script were restored to PR-00 baseline. The earlier integrated-folder entries below describe prior revisions only.
