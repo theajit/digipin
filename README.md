@@ -1,5 +1,9 @@
 ## PinID planning (PR-00)
 
+**PinID Lite MVP:** See [configuration, API, deployment and rollback](docs/PINID_LITE.md).
+The owner-only beta is disabled by default and requires confirmed durable single-writer
+storage and three independent secrets. No third-party resolution or integration.
+
 This fork is independently operated. It reuses the open-source India Post DIGIPIN
 implementation and credits the Department of Posts, IIT Hyderabad and NRSC, ISRO.
 It does not claim official India Post affiliation or government identity/address

@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const morgan = require('morgan');
 const digipinRoutes = require('./routes/digipin.routes');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yaml');
@@ -12,10 +11,23 @@ const swaggerDocument = YAML.parse(fs.readFileSync(path.join(__dirname, '../swag
 
 const app = express();
 
+// PinID is deliberately mounted before legacy CORS/body/error middleware.
+// No request logger: URLs, credentials and coordinate payloads must stay private.
+app.disable('x-powered-by');
+const liteConfig = require('./pinid-lite/config').loadConfig();
+if (liteConfig) {
+  const lite = require('./pinid-lite/routes').createLite(liteConfig);
+  app.use('/pinid', lite.router);
+  app.locals.pinidLite = lite.service;
+}
+app.get('/healthz', (req, res) => {
+  try { res.json({ status: 'ok', pinid_lite: app.locals.pinidLite ? (app.locals.pinidLite.health() ? 'enabled' : 'unavailable') : 'disabled' }); }
+  catch { res.status(503).json({ status: 'unavailable' }); }
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
 
 // Swagger Docs Route
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -33,5 +45,13 @@ app.get('/disclaimer', (req, res) => {
   res.sendFile(path.join(__dirname, '../docs/disclaimer.html'));
 });
 app.use('/docs', express.static(path.join(__dirname, '../docs')));
+
+// Preserve legacy middleware-error status and HTML content type without logging
+// parser excerpts, stack traces, coordinate values or request contents.
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  const status = Number.isInteger(error.status) && error.status >= 400 && error.status < 600 ? error.status : 500;
+  res.status(status).type('html').send('Request could not be processed.');
+});
 
 module.exports = app;

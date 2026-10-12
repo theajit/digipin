@@ -2,6 +2,11 @@
 node_modules/
 .env
 .env.local
+.env.pinid-lite
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 .DS_Store
 logs
 *.log
