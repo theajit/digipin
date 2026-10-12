@@ -1,3 +1,26 @@
+## PinID planning (PR-00)
+
+This fork is independently operated. It reuses the open-source India Post DIGIPIN
+implementation and credits the Department of Posts, IIT Hyderabad and NRSC, ISRO.
+It does not claim official India Post affiliation or government identity/address
+verification. The upstream reference documentation below is retained for provenance;
+its government-issued privacy/disclaimer text must be replaced with independent
+operator notices before a PinID launch.
+
+PinID is proposed as invite-only `username@pincode` identity with a private address
+vault at `name.pincode.cafe`. No PinID runtime functionality is implemented in PR-00.
+Review the [architecture](docs/PINID_ARCHITECTURE.md),
+[threat model](docs/PINID_THREAT_MODEL.md),
+[migration plan](docs/PINID_MIGRATION_PLAN.md),
+[implementation plan](docs/PINID_IMPLEMENTATION_PLAN.md),
+[repository audit](docs/PINID_AUDIT.md) and
+[executed verification/deployment notes](docs/PINID_PR00_VERIFICATION.md).
+
+Baseline checks: `npm run check` and `npm run test:coverage` on Node 22/24.
+Existing encode/decode runtime remains unchanged. PR-01 requires architecture review.
+
+---
+
 <div align="center">
 
 <table width="100%">

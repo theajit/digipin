@@ -1,0 +1,20 @@
+{
+  "provenance": {
+    "source": "https://github.com/INDIAPOST-gov/digipin",
+    "engineBlobSha": "02a89afa066a30f5cf2a55dbc2a64e7964efbf30",
+    "checkedOn": "2026-10-13",
+    "note": "Published examples come from the official README. Boundary vectors are independently derived from the specified grid, not published official test vectors. Bangalore example is a local regression fixture."
+  },
+  "encode": [
+    { "latitude": 13.11179621, "longitude": 80.20264269, "digipin": "4T396F42L7", "source": "official README encode example" },
+    { "latitude": 12.972579, "longitude": 77.592015, "digipin": "4P3JK83M28", "source": "local regression example" },
+    { "latitude": 2.5, "longitude": 63.5, "digipin": "LLLLLLLLLL", "source": "specification southwest boundary" },
+    { "latitude": 38.5, "longitude": 99.5, "digipin": "8888888888", "source": "specification northeast boundary" },
+    { "latitude": 20.5, "longitude": 81.5, "digipin": "2LLLLLLLLL", "source": "specification central boundary tie" }
+  ],
+  "decode": [
+    { "digipin": "4P3JK852C9", "latitude": "12.971601", "longitude": "77.594584", "source": "official README decode example" },
+    { "digipin": "4T396F42L7", "latitude": "13.111780", "longitude": "80.202635", "source": "local centre-point characterization" },
+    { "digipin": "4P3JK83M28", "latitude": "12.972563", "longitude": "77.592009", "source": "local centre-point characterization" }
+  ]
+}
