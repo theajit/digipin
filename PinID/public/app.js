@@ -1,6 +1,21 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let csrf = ''; let profile = null;
+function task(name, focus = false) {
+  if (focus) message('');
+  for (const panel of document.querySelectorAll('[data-panel]')) panel.hidden = panel.dataset.panel !== name;
+  for (const button of document.querySelectorAll('[data-task]')) { const selected = button.dataset.task === name; button.setAttribute('aria-selected', String(selected)); button.tabIndex = selected ? 0 : -1; }
+  if (focus) document.querySelector(`[data-panel="${name}"] h2`)?.focus();
+}
+for (const button of document.querySelectorAll('[data-task]')) {
+  button.addEventListener('click', () => task(button.dataset.task, true));
+  button.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault(); const buttons = [...document.querySelectorAll('[data-task]')].filter(item => !item.hidden);
+    const index = buttons.indexOf(button); const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+    task(buttons[next].dataset.task); buttons[next].focus();
+  });
+}
 function message(text, error = false) { $('message').textContent = text; $('message').className = error ? 'error' : ''; }
 async function api(path, method = 'GET', body) {
   const response = await fetch(`/api${path}`, { method, credentials: 'same-origin', cache: 'no-store',
@@ -9,7 +24,8 @@ async function api(path, method = 'GET', body) {
   const value = response.status === 204 ? null : await response.json();
   if (!response.ok) {
     const messages = { ENROLLMENT_FAILED: 'The invitation or username could not be accepted. Check your invitation and try another username.',
-      RECOVERY_FAILED: 'That recovery credential could not be accepted.', RATE_LIMITED: 'Too many attempts. Wait ten minutes before trying again.',
+      RECOVERY_FAILED: 'That sign-in key could not be accepted. Check the full key and try again.', RATE_LIMITED: 'Too many attempts. Wait ten minutes before trying again.',
+      INVALID_DIGIPIN: 'Enter all 10 DIGIPIN characters. Spaces and dashes are okay.', NOT_FOUND: 'This PinID is unavailable or its owner has kept it private.',
       INVALID_ALIAS: 'Use 3–30 letters, numbers, underscores or hyphens. This name may be reserved.',
       UNAUTHORIZED: 'Your session has ended. Use your recovery credential to return.',
       CONFIRMATION_REQUIRED: 'Confirm the selected coordinates before saving.', INVALID_COORDINATES: 'Enter valid coordinates within the DIGIPIN bounds.' };
@@ -24,6 +40,7 @@ function clear() {
   $('saved-location').replaceChildren(); $('edit').reset(); $('delete-user').reset();
   $('enroll').reset(); $('recover').reset();
   for (const form of [$('enroll'), $('edit')]) { form.dataset.source = 'manual'; updatePreview(form); }
+  $('tab-dashboard').hidden = true; $('tab-create').hidden = false; $('tab-signin').hidden = false; task('find');
 }
 function show(value) {
   profile = value; csrf = value.csrf || csrf; $('access').hidden = true; $('dashboard').hidden = false;
@@ -32,7 +49,8 @@ function show(value) {
     const dt = document.createElement('dt'); const dd = document.createElement('dd'); dt.textContent = label; dd.textContent = String(data); $('saved-location').append(dt, dd);
   }
   $('delete-location').hidden = !record;
-  api('/sharing').then(status=>{if(profile?.id!==value.id)return;$('sharing').elements.enabled.checked=status.enabled;$('sharing').elements.confirmed.checked=false;$('sharing-status').textContent=status.enabled?'Public resolution enabled.':'Private: public resolution is off.';}).catch(()=>{});
+  $('tab-dashboard').hidden = false; $('tab-create').hidden = true; $('tab-signin').hidden = true; task('dashboard');
+  api('/sharing').then(status=>{if(profile?.id!==value.id)return;$('sharing').elements.enabled.checked=status.enabled;$('sharing').elements.confirmed.checked=false;$('sharing-status').textContent=status.enabled?'Public: anyone can find these coordinates.':'Private: only you can see this place.';$('stop-sharing').hidden=!status.enabled;}).catch(()=>message('We could not check your sharing setting. Try refreshing.',true));
   for (const name of ['label', 'latitude', 'longitude', 'address']) $('edit').elements[name].value = record?.[name] ?? (name === 'label' ? 'Home' : '');
   $('edit').elements.confirmed.checked = false; updatePreview($('edit'));
 }
@@ -44,6 +62,15 @@ function updatePreview(form) {
   form.querySelector('.preview').textContent = `Selected coordinates: ${form.elements.latitude.value || '—'}, ${form.elements.longitude.value || '—'}. Confirm these before saving.`;
 }
 for (const form of [$('enroll'), $('edit')]) {
+  form.querySelector('.decode-location').addEventListener('click', async event => {
+    const button = event.currentTarget; const code = form.elements.coordinate_code.value; button.disabled = true;
+    try { const value = await api('/tools/decode', 'POST', {digipin: code});
+      if (form.elements.coordinate_code.value !== code) throw new Error('The DIGIPIN changed. Press the button again.');
+      form.elements.latitude.value = value.latitude; form.elements.longitude.value = value.longitude;
+      form.dataset.source = 'manual'; form.elements.confirmed.checked = false; updatePreview(form);
+      form.querySelector('.preview').textContent += ' This is the centre of the DIGIPIN map square.';
+    } catch (error) { form.querySelector('.preview').textContent = error.message; } finally { button.disabled = false; }
+  });
   form.querySelector('.location-editor').addEventListener('input', event => {
     if (event.target.name !== 'confirmed') { form.elements.confirmed.checked = false; updatePreview(form); }
     if (['latitude', 'longitude'].includes(event.target.name)) form.dataset.source = 'manual';
@@ -61,14 +88,18 @@ for (const form of [$('enroll'), $('edit')]) {
 function submit(form, work) {
   form.addEventListener('submit', async event => {
     event.preventDefault(); const button = form.querySelector('[type=submit]'); button.disabled = true;
-    try { await work(); } catch (error) { message(error.message, true); } finally { button.disabled = false; }
+    const status = form.querySelector('.form-status'); if (status) { status.textContent = 'Please wait…'; status.classList.remove('error'); }
+    try { await work(); if (status) status.textContent = 'Done.'; } catch (error) { if (status) {status.textContent = error.message; status.classList.add('error');} message(error.message, true); } finally { button.disabled = false; }
   });
 }
 submit($('enroll'), async () => {
   const form = $('enroll'); const value = await api('/enroll', 'POST', { invitation: form.elements.invitation.value, username: form.elements.username.value, location: locationInput(form) });
   form.reset(); show(value); $('new-credential').textContent = value.recovery_credential; delete value.recovery_credential;
   $('recovery-once').hidden = false; message('Your private identity is ready. Save the credential now.');
+  $('recovery-once').querySelector('h2').focus();
 });
+ $('copy-credential').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('new-credential').textContent); message('Key copied. Save it somewhere safe before leaving.'); } catch { message('Copy is unavailable. Select the key and copy it yourself.', true); } });
+ $('stop-sharing').addEventListener('click', async () => { try {await api('/sharing','PUT',{enabled:false,confirmed:false});show(await api('/me'));message('Your place is private. New public lookups are stopped.');}catch(error){message(error.message,true);} });
 submit($('recover'), async () => { const value = await api('/recover', 'POST', { credential: $('recover').elements.credential.value }); $('recover').reset(); show(value); message('Your private dashboard is open.'); });
 submit($('edit'), async () => { await api('/location', 'PUT', locationInput($('edit'))); show(await api('/me')); message('Location saved privately.'); });
 submit($('delete-user'), async () => { if (!confirm('Delete this identity and its live location?')) return; await api('/me', 'DELETE', { credential: $('delete-user').elements.credential.value }); clear(); message('Identity deleted. Sessions and recovery access revoked.'); });
@@ -85,6 +116,6 @@ window.addEventListener('pageshow', () => { api('/me').then(show).catch(() => cl
 for (const button of document.querySelectorAll('button[type="submit"]')) button.disabled = false;
 
 submit($('interest'),async()=>{const form=$('interest');await api('/interest','POST',{name:form.elements.name.value,phone:form.elements.phone.value,email:form.elements.email.value,username:form.elements.username.value,confirmed:form.elements.confirmed.checked});form.reset();message('Request received. The administrator will review it; your username is not reserved.');});
-submit($('resolve'),async()=>{$('resolved').replaceChildren();const value=await api('/resolve','POST',{handle:$('resolve').elements.handle.value});$('resolved').replaceChildren();for(const [label,data] of Object.entries(value)){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=String(data);$('resolved').append(dt,dd);}});
+submit($('resolve'),async()=>{$('resolved').replaceChildren();const input=$('resolve').elements.handle.value.trim();const isHandle=input.toLowerCase().endsWith('@pincode');const value=await api(isHandle?'/resolve':'/tools/decode','POST',isHandle?{handle:input}:{digipin:input});for(const [key,label] of [['handle','PinID'],['digipin','DIGIPIN'],['latitude','Latitude'],['longitude','Longitude']]){if(value[key]===undefined)continue;const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=String(value[key]);$('resolved').append(dt,dd);}message(isHandle?'This owner has chosen to share this place.':'This is the centre of the DIGIPIN map square.');});
 submit($('sharing'),async()=>{const form=$('sharing');await api('/sharing','PUT',{enabled:form.elements.enabled.checked,confirmed:form.elements.confirmed.checked});show(await api('/me'));message('Sharing preference saved. Revocation prevents future lookup; existing copies cannot be recalled.');});
 for(const button of document.querySelectorAll('button[type="submit"]'))button.disabled=false;

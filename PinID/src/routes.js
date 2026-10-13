@@ -51,6 +51,7 @@ function createLite(config, providedService) {
   const admin=async(req,res,next)=>{try{const session=adminCookie(req);await service.adminCheck(session);req.adminSession=session;if(req.method!=='GET'&&!s.same(req.get('X-PinID-CSRF'),service.csrf(session)))throw new s.LiteError('CSRF_REJECTED',403);next();}catch(error){next(error);}};
   router.post('/api/interest',attempt('interest'),async(req,res)=>res.status(202).json(await service.interest(req.body)));
   router.post('/api/resolve',attempt('resolve'),async(req,res)=>res.json(await service.resolve(req.body)));
+  router.post('/api/tools/decode',attempt('decode'),(req,res)=>res.json(require('./coordinates').coordinates(req.body)));
   router.post('/api/admin/login',attempt('admin'),async(req,res)=>{const session=await service.adminLogin(req.body);setAdminCookie(res,session);res.json({csrf:service.csrf(session)});});
   router.get('/api/admin/me',attempt('owner'),admin,(req,res)=>res.json({csrf:service.csrf(req.adminSession)}));
   router.post('/api/admin/queue',attempt('owner'),admin,async(req,res)=>{s.fields(req.body,['before']);res.json(await service.queue(req.body.before));});

@@ -88,6 +88,7 @@ Base `/api`; errors `{error:{code}}`, no-store responses. No query parameters. J
 | POST /invitations | admin `X-PinID-Admin`; `{expires_in_seconds?:60..604800}`; 201 `{invitation,expires_at}` |
 | POST /enroll | invitation; `{invitation,username,location}`; 201 profile, csrf, one-time recovery_credential, session cookie |
 | POST /recover | `{credential}`; 200 profile/csrf + fresh cookie, revokes previous sessions |
+| POST /tools/decode | same-origin JSON `{digipin}`; public geographical code to canonical DIGIPIN and grid-centre coordinates, no private record access; see [task interface](docs/FRIENDLY_UX.md) |
 | GET /me | owner profile/alias/private location/csrf |
 | GET /me/export | owner JSON record download |
 | DELETE /me | owner + CSRF + `{credential}`; delete live identity data, reserve alias, revoke sessions; 204 |
