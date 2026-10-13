@@ -2,7 +2,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 function loadConfig(env = process.env) {
-  if (env.PINID_LITE_ENABLED !== 'true') return null;
+  const enabled = env.PINID_LITE_ENABLED;
+  if (!(enabled === true || (typeof enabled === 'string' && enabled.trim().toLowerCase() === 'true'))) return null;
   function secret(name) {
     const value = env[name];
     if (!value || !/^[A-Za-z0-9_-]{43}$/.test(value) || Buffer.from(value, 'base64url').length !== 32) {
