@@ -27,7 +27,15 @@ function loadConfig(env = process.env) {
   const backend = env.PINID_STORAGE_BACKEND || 'sqlite';
   if (backend === 'postgres') {
     const { postgresConfig } = require('./postgres-config');
-    return { ...common, backend, postgres: postgresConfig(env) };
+    const autoMigrate = env.PINID_AUTO_MIGRATE===true || (typeof env.PINID_AUTO_MIGRATE==='string' && env.PINID_AUTO_MIGRATE.trim().toLowerCase()==='true');
+    const postgres = postgresConfig(env);
+    if(autoMigrate&&!env.PINID_MIGRATION_DATABASE_URL)throw new Error('PostgreSQL migration credential required');
+    const migration = autoMigrate ? postgresConfig(env,true) : undefined;
+    if(migration){
+      const target=new URL(postgres.connectionString), source=new URL(migration.connectionString);
+      if(target.hostname!==source.hostname||target.port!==source.port||target.pathname!==source.pathname)throw new Error('Migration database target mismatch');
+    }
+    return { ...common, backend, postgres, autoMigrate, migration };
   }
   if (backend !== 'sqlite') throw new Error('Invalid storage backend');
   if (env.PINID_SINGLE_WRITER !== 'true' || env.PINID_STORAGE_CONFIRMED !== 'true') {
