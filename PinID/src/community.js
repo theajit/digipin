@@ -46,16 +46,19 @@ module.exports={
   s.fields(input,['enabled','confirmed'],['enabled']);if(typeof input.enabled!=='boolean'||(input.enabled&&input.confirmed!==true))throw new s.LiteError('CONFIRMATION_REQUIRED');
   return this.repo.transaction(()=>{
    const user=this.repo.get("SELECT id FROM users WHERE id=? AND status='active'",userId);if(!user)throw new s.LiteError('NOT_FOUND',404);
-   if(this.repo.run('UPDATE locations SET public_enabled=? WHERE user_id=?',input.enabled?1:0,userId).changes!==1)throw new s.LiteError('NOT_FOUND',404);
+   const row=this.repo.get('SELECT id,encrypted FROM locations WHERE user_id=?',userId);if(!row)throw new s.LiteError('NOT_FOUND',404);
+   const payload=s.decrypt(this.config.encryptionKey,userId,row.id,row.encrypted);payload.public_sharing=input.enabled;
+   if(this.repo.run('UPDATE locations SET public_enabled=?,encrypted=? WHERE user_id=?',input.enabled?1:0,s.encrypt(this.config.encryptionKey,userId,row.id,payload),userId).changes!==1)throw new s.LiteError('NOT_FOUND',404);
    this.audit(userId,input.enabled?'sharing.enabled':'sharing.revoked');return {enabled:input.enabled};
   });
  },
- sharingStatus(userId){const row=this.repo.get('SELECT public_enabled FROM locations WHERE user_id=?',userId);return {enabled:row?.public_enabled===1};},
+ sharingStatus(userId){const row=this.repo.get('SELECT id,encrypted,public_enabled FROM locations WHERE user_id=?',userId);return {enabled:row?.public_enabled===1&&s.decrypt(this.config.encryptionKey,userId,row.id,row.encrypted).public_sharing===true};},
  resolve(input){
   s.fields(input,['handle'],['handle']);if(typeof input.handle!=='string'||!input.handle.trim().toLowerCase().endsWith('@pincode'))throw new s.LiteError('NOT_FOUND',404);
   let alias;try{alias=s.alias(input.handle.trim().slice(0,-8));}catch{throw new s.LiteError('NOT_FOUND',404);}
   const row=this.repo.get("SELECT locations.id,locations.user_id,locations.encrypted FROM locations JOIN users ON users.id=locations.user_id WHERE users.alias=? AND users.status='active' AND locations.public_enabled=1",alias);
   if(!row)throw new s.LiteError('NOT_FOUND',404);const value=s.decrypt(this.config.encryptionKey,row.user_id,row.id,row.encrypted);
+  if(value.public_sharing!==true)throw new s.LiteError('NOT_FOUND',404);
   return {handle:alias,digipin:value.digipin,latitude:value.latitude,longitude:value.longitude};
  }
 };

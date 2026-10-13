@@ -16,6 +16,8 @@ Shared community service methods have synchronous SQLite and asynchronous Postgr
 
 ## API additions
 
+The owner opt-in is also stored within the authenticated encrypted location payload as public_sharing. Resolver requires both the visibility flag and that protected opt-in. Toggling the database flag alone cannot expose a never-shared location. Owner sharing changes re-encrypt only that owner's payload with the existing algorithm/AAD. Database snapshot replay can still restore previously opted-in records; backup/revocation reconciliation remains necessary. The ciphertext envelope/keys/algorithm stay compatible; exported owner records may include their sharing flag.
+
 Existing paths/encode engine remain unchanged. Prefix /api (legacy /pinid/api also works). All request JSON strict fields; error contract unchanged. Public resolve may return 404, 429 or generic 503; unauthorized admin returns 401, missing CSRF/wrong Origin 403. Interest submission returns 202 status received, not availability.
 
 | Endpoint | Contract |

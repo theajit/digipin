@@ -29,6 +29,9 @@ async function contract(t,service,config){
   await t.test('sharing is explicit owner-only narrow revocable and resets on update/delete',async()=>{
    const handle={handle:'community-owner@pincode'};
    assert.equal((await request('/api/resolve','POST',handle)).status,404);
+   await service.repo.run('UPDATE locations SET public_enabled=1 WHERE user_id=?',owner.profile.id);
+   assert.equal((await request('/api/resolve','POST',handle)).status,404);assert.equal((await service.sharingStatus(owner.profile.id)).enabled,false);
+   await service.repo.run('UPDATE locations SET public_enabled=0 WHERE user_id=?',owner.profile.id);
    assert.equal((await request('/api/sharing','PUT',{enabled:true},cookie,csrf)).status,400);
    assert.equal((await request('/api/sharing','PUT',{enabled:true,confirmed:true})).status,401);
    assert.equal((await request('/api/sharing','PUT',{enabled:true,confirmed:true},cookie)).status,403);
@@ -51,6 +54,7 @@ async function contract(t,service,config){
    const pending=(await service.queue()).items[0],before=await service.repo.get('SELECT count(*) AS n FROM invitations'),audit=service.audit;
    service.audit=()=>{throw new Error('Injected audit failure');};try{await assert.rejects(async()=>service.decide(pending.id,{decision:'approve'}));}finally{service.audit=audit;}
    assert.equal((await service.repo.get('SELECT status FROM interest_requests WHERE id=?',pending.id)).status,'pending');assert.equal((await service.repo.get('SELECT count(*) AS n FROM invitations')).n,before.n);
+   const approvals=await Promise.allSettled([Promise.resolve().then(()=>service.decide(pending.id,{decision:'approve'})),Promise.resolve().then(()=>service.decide(pending.id,{decision:'approve'}))]);assert.equal(approvals.filter(x=>x.status==='fulfilled').length,1);assert.equal(Number((await service.repo.get('SELECT count(*) AS n FROM invitations')).n),Number(before.n)+1);
    await service.saveLocation(owner.profile.id,loc);await service.sharing(owner.profile.id,{enabled:true,confirmed:true});
    const Other=service.constructor,other= config.backend==='postgres'?await Other.create(config):null;
    if(other){try{assert.equal((await other.resolve({handle:'community-owner@pincode'})).digipin,'4P3JK83M28');}finally{await other.close();}}
