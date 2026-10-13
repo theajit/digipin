@@ -21,6 +21,10 @@ function createApp(config = loadConfig(), providedService) {
   return app;
 }
 async function createAppAsync(config=loadConfig()) {
+  if(config?.backend==='postgres'&&config.autoMigrate){
+    if(!config.migration)throw new Error('PostgreSQL migration credential required');
+    await require('./postgres-repository').migrate(config.migration);
+  }
   const service=config?.backend==='postgres'?await require('./postgres-service').Service.create(config):undefined;
   return createApp(config,service);
 }

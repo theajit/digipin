@@ -1,6 +1,8 @@
 'use strict';
 // Allowlisted operator hints only. Never print arbitrary exception text/paths.
 const hints = new Map([
+  ['Migration database target mismatch','Migration and runtime credentials must target the same PostgreSQL host, port and database.'],
+  ['PostgreSQL migration credential required','Automatic schema migration requires PINID_MIGRATION_DATABASE_URL for a separate migration role.'],
   ['PostgreSQL configuration invalid','PostgreSQL configuration invalid. Check database URL, TLS, pinid schema, postgres-v1 version, pool and timeout settings; do not log credentials.'],
   ['PostgreSQL migrations invalid','PostgreSQL migrations are missing or their checksums differ. Run the reviewed migration CLI with a separate migration role; preserve data.'],
   ['PostgreSQL 17 required','PostgreSQL server version must be 17 or newer.'],

@@ -24,6 +24,8 @@ The visual family follows the live [DIGIPIN portal](https://digipin.pincode.cafe
 
 ## Architecture differences and limits
 
+For opt-in schema migration during PostgreSQL startup, see [automatic schema migrations](docs/AUTO_SCHEMA_MIGRATIONS.md). Set PINID_AUTO_MIGRATE=true and a separate private PINID_MIGRATION_DATABASE_URL; no terminal migration command is then needed. This does not move SQLite records.
+
 PostgreSQL 17 support is available as an explicit backend; SQLite remains default. See [PostgreSQL architecture, configuration, migrations, Dokploy guide and rollback](docs/POSTGRES_DEPLOYMENT.md). PostgreSQL mode uses `PINID_STORAGE_BACKEND=postgres` and a private `PINID_DATABASE_URL`; it does not require the SQLite directory marker. Run the reviewed migration CLI separately before runtime startup. Existing SQLite data is not migrated automatically.
 
 CommonJS Express with route/service/repository/security boundaries. Node >=22.18 is required; Node 24 is recommended. `node:sqlite` avoids a new/native dependency and remains experimental in these LTS versions. SQLite has a numbered checksum-tracked additive migration, UNIQUE aliases, `BEGIN IMMEDIATE` enrollment, WAL and FULL synchronization. A separate SQLite exclusive writer lock prevents a second server on the same volume and automatically releases on exit/crash. This requires a host-local filesystem supporting SQLite locks, never NFS/shared network volumes or serverless/ephemeral deployments.

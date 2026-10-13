@@ -2,7 +2,7 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const {once}=require('node:events');
 const {spawn}=require('node:child_process');const path=require('node:path');
 const {postgresConfig}=require('../src/postgres-config');const {PostgresRepository,migrate,parameters}=require('../src/postgres-repository');
-const {Service}=require('../src/postgres-service');const {createApp}=require('../src/app');const s=require('../src/security');
+const {Service}=require('../src/postgres-service');const {createApp,createAppAsync}=require('../src/app');const s=require('../src/security');
 test('PostgreSQL configuration is explicit and does not weaken TLS implicitly',()=>{
   const env={PINID_DATABASE_URL:'postgresql://tester@localhost/pinid_test',PINID_DB_POOL_MAX:'5',PINID_DB_CONNECTION_TIMEOUT_MS:'5000'};
   assert.equal(postgresConfig(env).ssl.rejectUnauthorized,true);assert.equal(postgresConfig(env).max,5);
@@ -15,7 +15,18 @@ test('PostgreSQL persistence and private API contract', {skip:!url}, async t=>{
   assert.ok(['127.0.0.1','localhost'].includes(parsed.hostname));assert.ok(parsed.pathname.endsWith('_test'));
   assert.equal(process.env.PINID_PG_TEST_ALLOW_RESET,'true','Explicit disposable database reset permission required');
   const pg=postgresConfig({PINID_DATABASE_URL:url,PINID_PG_TLS:'disable'});const admin=new PostgresRepository(pg);
-  await admin.query('DROP SCHEMA IF EXISTS pinid CASCADE');await migrate(pg);await migrate(pg);
+  await admin.query('DROP SCHEMA IF EXISTS pinid CASCADE');
+  const autoConfig={backend:'postgres',postgres:pg,migration:pg,autoMigrate:true,origin:'https://pinid.test',secure:true,
+    encryptionKey:Buffer.from(s.token(),'base64url'),sessionSecret:s.token(),adminSecret:s.token(),sessionSeconds:3600};
+  await t.test('startup auto-migrates clean database concurrently and repeat startup preserves data',async()=>{
+    const apps=await Promise.all([createAppAsync(autoConfig),createAppAsync(autoConfig)]);
+    try{const invitation=await apps[0].locals.pinid.invite();assert.ok(invitation.invitation);}
+    finally{await Promise.all(apps.map(app=>app.locals.pinid.close()));}
+    const before=await admin.get('SELECT count(*) AS count FROM invitations');
+    const repeated=await createAppAsync(autoConfig);await repeated.locals.pinid.close();
+    assert.equal((await admin.get('SELECT count(*) AS count FROM invitations')).count,before.count);
+  });
+  await migrate(pg);
   // The migration role owns objects; actual application tests use only DML privileges.
   await admin.query("DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='pinid_runtime_test') THEN CREATE ROLE pinid_runtime_test LOGIN PASSWORD 'disposable-test-only'; END IF; END $$");
   await admin.query('GRANT USAGE ON SCHEMA pinid TO pinid_runtime_test');
@@ -24,7 +35,7 @@ test('PostgreSQL persistence and private API contract', {skip:!url}, async t=>{
   const runtime=new URL(url);runtime.username='pinid_runtime_test';runtime.password='disposable-test-only';
   const runtimePg=postgresConfig({PINID_DATABASE_URL:runtime.toString(),PINID_PG_TLS:'disable'});
   let now=Date.now();const config={backend:'postgres',postgres:runtimePg,origin:'https://pinid.test',secure:true,
-    encryptionKey:Buffer.from(s.token(),'base64url'),sessionSecret:s.token(),adminSecret:s.token(),sessionSeconds:3600};
+    encryptionKey:autoConfig.encryptionKey,sessionSecret:s.token(),adminSecret:s.token(),sessionSeconds:3600};
   let service=await Service.create(config,()=>now);const app=createApp(config,service);const server=app.listen(0,'127.0.0.1');await once(server,'listening');
   const base=`http://127.0.0.1:${server.address().port}`;
   const input=(invite,name)=>({invitation:invite,username:name,location:{latitude:12.972579,longitude:77.592015,confirmed:true,label:'Private synthetic home'}});
@@ -38,6 +49,7 @@ test('PostgreSQL persistence and private API contract', {skip:!url}, async t=>{
       await service.repo.verify();await assert.rejects(()=>service.repo.query('CREATE TABLE pinid.not_allowed(id integer)'));
       await admin.run("UPDATE schema_migrations SET checksum='tampered' WHERE version=1");
       await assert.rejects(()=>service.repo.verify());await assert.rejects(()=>migrate(pg));
+      await assert.rejects(()=>createAppAsync(autoConfig));
       const fs=require('node:fs');const sql=fs.readFileSync(path.join(__dirname,'../migrations/postgres/001_initial.sql'),'utf8').replace(/\r\n/g,'\n');
       await admin.run('UPDATE schema_migrations SET checksum=? WHERE version=1',s.hash(sql));await migrate(pg);
     });
