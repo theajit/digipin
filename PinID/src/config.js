@@ -21,6 +21,14 @@ function loadConfig(env = process.env) {
       (origin.protocol !== 'https:' && !(development && origin.protocol === 'http:'))) {
     throw new Error('PinID Lite requires an exact HTTPS PINID_ORIGIN (explicit local development exception only)');
   }
+  const common = { origin: origin.origin, encryptionKey: Buffer.from(encryptionKey, 'base64url'),
+    sessionSecret, adminSecret, secure: !development, sessionSeconds: 3600 };
+  const backend = env.PINID_STORAGE_BACKEND || 'sqlite';
+  if (backend === 'postgres') {
+    const { postgresConfig } = require('./postgres-config');
+    return { ...common, backend, postgres: postgresConfig(env) };
+  }
+  if (backend !== 'sqlite') throw new Error('Invalid storage backend');
   if (env.PINID_SINGLE_WRITER !== 'true' || env.PINID_STORAGE_CONFIRMED !== 'true') {
     throw new Error('PinID Lite requires confirmed durable local storage and a single writer');
   }

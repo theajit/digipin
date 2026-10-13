@@ -1,6 +1,9 @@
 'use strict';
 // Allowlisted operator hints only. Never print arbitrary exception text/paths.
 const hints = new Map([
+  ['PostgreSQL configuration invalid','PostgreSQL configuration invalid. Check database URL, TLS, pinid schema, postgres-v1 version, pool and timeout settings; do not log credentials.'],
+  ['PostgreSQL migrations invalid','PostgreSQL migrations are missing or their checksums differ. Run the reviewed migration CLI with a separate migration role; preserve data.'],
+  ['PostgreSQL 17 required','PostgreSQL server version must be 17 or newer.'],
   ...['PINID_ENCRYPTION_KEY','PINID_SESSION_SECRET','PINID_ADMIN_SECRET'].map(name =>
     [`PinID Lite requires a 32-byte base64url ${name}`, `${name}: set a distinct 43-character base64url secret generated from 32 random bytes.`]),
   ['PinID Lite secrets must be distinct','Secrets must be three different values.'],
