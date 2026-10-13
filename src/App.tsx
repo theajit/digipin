@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { PinIDResolver } from './PinIDResolver';
+import { resolvePinID } from './pinid';
 import { Check, ChevronDown, Clipboard, Compass, ExternalLink, Grid2X2, HelpCircle, LocateFixed, Map, MapPin, RefreshCw, Search, Share2 } from 'lucide-react';
 import { OpenLocationCode } from 'open-location-code';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
 const ALPHABET = /^[23456789CJKLMPFT]{10}$/;
-type Mode = 'encode' | 'decode' | 'pluscode';
-type Result = { digipin: string; latitude: string; longitude: string };
+type Mode = 'encode' | 'decode' | 'pluscode' | 'pinid';
+type Result = { digipin: string; latitude: string; longitude: string; handle?: string };
 const plusCodeCodec = new OpenLocationCode();
 
 const formatCode = (code: string) => code.length === 10 ? `${code.slice(0, 3)} ${code.slice(3, 7)} ${code.slice(7)}` : code;
@@ -17,6 +17,7 @@ export function App() {
   const [longitude, setLongitude] = useState('80.270956');
   const [digipin, setDigipin] = useState('');
   const [plusCode, setPlusCode] = useState('');
+  const [handle, setHandle] = useState('');
   const [result, setResult] = useState<Result | null>(null);
   const [history, setHistory] = useState<Result[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,6 +30,8 @@ export function App() {
     return latitude !== '' && longitude !== '' && Number.isFinite(lat) && Number.isFinite(lng) && lat >= 2.5 && lat <= 38.5 && lng >= 63.5 && lng <= 99.5;
   }, [latitude, longitude]);
   const validCode = ALPHABET.test(digipin);
+  const validHandle = /^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]@pincode$/i.test(handle.trim());
+  const changeMode = (next: Mode) => { setMode(next); setError(''); setResult(null); setCopied(false); };
   const plusCodeInput = plusCode.trim().toUpperCase();
   const [plusCodePart = '', ...localityParts] = plusCodeInput.split(/[\s,]+/);
   const plusCodeLocality = localityParts.join(' ').trim();
@@ -41,7 +44,13 @@ export function App() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
+    if (mode === 'pinid') setResult(null);
     try {
+      if (mode === 'pinid') {
+        const place = await resolvePinID(handle);
+        setResult({ ...place, latitude: String(place.latitude), longitude: String(place.longitude) });
+        return;
+      }
       let endpoint = mode === 'decode' ? 'decode' : 'encode';
       let body: { latitude: number; longitude: number } | { digipin: string };
       let plusCoordinates: { latitude: string; longitude: string } | null = null;
@@ -88,7 +97,7 @@ export function App() {
   const copy = async () => { if (!result) return; await navigator.clipboard.writeText(result.digipin); setCopied(true); window.setTimeout(() => setCopied(false), 1500); };
   const share = async () => {
     if (!result) return;
-    const text = `My DIGIPIN is ${result.digipin} (${result.latitude}, ${result.longitude})`;
+    const text = result.handle ? `Public PinID ${result.handle}: ${result.digipin} (${result.latitude}, ${result.longitude})` : `My DIGIPIN is ${result.digipin} (${result.latitude}, ${result.longitude})`;
     if (navigator.share) await navigator.share({ title: 'DIGIPIN location', text }); else await navigator.clipboard.writeText(text);
   };
   const selectHistory = (item: Result) => { setResult(item); setLatitude(item.latitude); setLongitude(item.longitude); setDigipin(item.digipin); };
@@ -107,17 +116,17 @@ export function App() {
         <p>Turn any location in India into a shareable 10-character DIGIPIN, or trace a code back to its coordinates.</p>
       </section>
 
-      <PinIDResolver />
       <section className="workspace">
         <div className="tool-panel">
-          <div className="segmented" aria-label="Conversion mode">
-            <button className={mode === 'encode' ? 'active' : ''} onClick={() => { setMode('encode'); setError(''); }}><MapPin size={17} /> Generate</button>
-            <button className={mode === 'decode' ? 'active' : ''} onClick={() => { setMode('decode'); setError(''); }}><Compass size={17} /> Decode</button>
-            <button className={mode === 'pluscode' ? 'active' : ''} onClick={() => { setMode('pluscode'); setError(''); }}><Grid2X2 size={17} /> Plus Code</button>
+          <div className="segmented" role="tablist" aria-label="Conversion mode">
+            <button className={mode === 'encode' ? 'active' : ''} role="tab" aria-selected={mode === 'encode'} disabled={loading} onClick={() => changeMode('encode')}><MapPin size={17} /> Generate</button>
+            <button className={mode === 'decode' ? 'active' : ''} role="tab" aria-selected={mode === 'decode'} disabled={loading} onClick={() => changeMode('decode')}><Compass size={17} /> Decode</button>
+            <button className={mode === 'pluscode' ? 'active' : ''} role="tab" aria-selected={mode === 'pluscode'} disabled={loading} onClick={() => changeMode('pluscode')}><Grid2X2 size={17} /> Plus Code</button>
+            <button role="tab" aria-selected={mode === 'pinid'} disabled={loading} className={mode === 'pinid' ? 'active' : ''} onClick={() => changeMode('pinid')}><Search size={17} /> PinID</button>
           </div>
 
           <form onSubmit={submit}>
-            <div className="form-heading"><h2>{mode === 'encode' ? 'Where are you?' : mode === 'decode' ? 'Enter a DIGIPIN' : 'Convert a Plus Code'}</h2><p>{mode === 'encode' ? 'Use your location or enter coordinates.' : mode === 'decode' ? 'Use the continuous 10-character code.' : 'Turn a full Google Plus Code into a DIGIPIN.'}</p></div>
+            <div className="form-heading"><h2>{mode === 'encode' ? 'Where are you?' : mode === 'decode' ? 'Enter a DIGIPIN' : mode === 'pinid' ? 'Enter a PinID' : 'Convert a Plus Code'}</h2><p>{mode === 'encode' ? 'Use your location or enter coordinates.' : mode === 'decode' ? 'Use the continuous 10-character code.' : mode === 'pinid' ? 'Find a location its owner has explicitly shared publicly.' : 'Turn a full Google Plus Code into a DIGIPIN.'}</p></div>
             {mode === 'encode' ? <>
               <button type="button" className="locate-button" onClick={locate} disabled={locating}><LocateFixed size={18} className={locating ? 'spin' : ''} />{locating ? 'Finding your location…' : 'Use my current location'}</button>
               <div className="divider"><span>or enter manually</span></div>
@@ -126,7 +135,7 @@ export function App() {
                 <label>Longitude<input inputMode="decimal" value={longitude} onChange={e => setLongitude(e.target.value)} placeholder="80.270956" /></label>
               </div>
               <p className="field-note">Coverage: 2.5°–38.5° N, 63.5°–99.5° E</p>
-            </> : mode === 'decode' ? <label className="code-field">DIGIPIN<input autoFocus maxLength={10} value={digipin} onChange={e => setDigipin(e.target.value.toUpperCase().replace(/[^23456789CJKLMPFT]/g, ''))} placeholder="4T396F42L7" /><span>{digipin.length}/10</span></label> : <>
+            </> : mode === 'decode' ? <label className="code-field">DIGIPIN<input autoFocus maxLength={10} value={digipin} onChange={e => setDigipin(e.target.value.toUpperCase().replace(/[^23456789CJKLMPFT]/g, ''))} placeholder="4T396F42L7" /><span>{digipin.length}/10</span></label> : mode === 'pinid' ? <><label className="code-field">Public handle<input autoFocus maxLength={38} value={handle} onChange={e => setHandle(e.target.value)} placeholder="ajit@pincode" /></label><p className="field-note">Private handles cannot be resolved. Public coordinates do not verify residence or ownership.</p></> : <>
               <label className="code-field">Plus Code<input autoFocus value={plusCode} onChange={e => setPlusCode(e.target.value.toUpperCase())} placeholder="JJFH+MG Dhenkanal" /></label>
               <p className="field-note">Enter a full code, or add a locality after a short code. Locality search uses OpenStreetMap.</p>
               <details className="plus-guide">
@@ -139,7 +148,7 @@ export function App() {
               </details>
             </>}
             {error && <div className="error" role="alert">{error}</div>}
-            <button className="primary" disabled={loading || (mode === 'encode' ? !validCoords : mode === 'decode' ? !validCode : !validPlusCode)}>{loading ? <RefreshCw className="spin" size={18} /> : mode === 'encode' ? <MapPin size={18} /> : mode === 'decode' ? <Compass size={18} /> : <Grid2X2 size={18} />}{loading ? 'Working…' : mode === 'encode' ? 'Generate DIGIPIN' : mode === 'decode' ? 'Decode location' : 'Convert to DIGIPIN'}</button>
+            <button className="primary" disabled={loading || (mode === 'encode' ? !validCoords : mode === 'decode' ? !validCode : mode === 'pinid' ? !validHandle : !validPlusCode)}>{loading ? <RefreshCw className="spin" size={18} /> : mode === 'encode' ? <MapPin size={18} /> : mode === 'decode' ? <Compass size={18} /> : mode === 'pinid' ? <Search size={18} /> : <Grid2X2 size={18} />}{loading ? 'Working…' : mode === 'encode' ? 'Generate DIGIPIN' : mode === 'decode' ? 'Decode location' : mode === 'pinid' ? 'Resolve PinID' : 'Convert to DIGIPIN'}</button>
           </form>
         </div>
 
@@ -147,6 +156,7 @@ export function App() {
           <div className="map-visual" aria-hidden="true"><div className="map-road road-one" /><div className="map-road road-two" /><div className="map-water" />{result && <div className="pin"><MapPin size={22} fill="currentColor" /></div>}<span className="map-label label-one">Precise location</span><span className="map-label label-two">India</span></div>
           {result ? <div className="result-content">
             <span className="result-label">Your DIGIPIN</span><div className="code-display"><img src="/digipin-logo.png" alt="DIGIPIN" /><strong>{formatCode(result.digipin)}</strong></div>
+            {result.handle && <p className="field-note">Publicly shared by {result.handle}</p>}
             <div className="coordinates"><span><small>Latitude</small>{Number(result.latitude).toFixed(6)}</span><span><small>Longitude</small>{Number(result.longitude).toFixed(6)}</span></div>
             <div className="result-actions"><button onClick={copy}>{copied ? <Check size={17} /> : <Clipboard size={17} />}{copied ? 'Copied' : 'Copy code'}</button><button onClick={share}><Share2 size={17} /> Share</button></div>
             <div className="map-actions">
@@ -157,7 +167,7 @@ export function App() {
         </div>
       </section>
 
-      {history.length > 0 && <section className="recent"><div><span className="eyebrow">This session</span><h2>Recent locations</h2></div><div className="recent-list">{history.map(item => <button key={item.digipin} onClick={() => selectHistory(item)}><MapPin size={16} /><strong>{formatCode(item.digipin)}</strong><span>{Number(item.latitude).toFixed(4)}, {Number(item.longitude).toFixed(4)}</span><ExternalLink size={15} /></button>)}</div></section>}
+      {history.length > 0 && mode !== 'pinid' && <section className="recent"><div><span className="eyebrow">This session</span><h2>Recent locations</h2></div><div className="recent-list">{history.map(item => <button key={item.digipin} onClick={() => selectHistory(item)}><MapPin size={16} /><strong>{formatCode(item.digipin)}</strong><span>{Number(item.latitude).toFixed(4)}, {Number(item.longitude).toFixed(4)}</span><ExternalLink size={15} /></button>)}</div></section>}
     </main>
     <footer>
       <a href="https://pincode.cafe" aria-label="Visit Pin Code Cafe">Built by <b>Pin Code Cafe</b></a>
