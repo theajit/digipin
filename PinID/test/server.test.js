@@ -6,10 +6,17 @@ const { once } = require('node:events');
 const http = require('node:http');
 const path = require('node:path');
 function normalizeRuntimeStderr(stderr) {
-  return stderr
-    .replace(/^\(node:\d+\) ExperimentalWarning: SQLite is an experimental feature and might change at any time\r?\n/gm, '')
-    .replace(/^\(Use `node --trace-warnings \.\.\.` to show where the warning was created\)\r?\n/gm, '');
+  return stderr.replace(/^\(node:\d+\) ExperimentalWarning: SQLite is an experimental feature and might change at any time\r?\n(?:\(Use `node --trace-warnings \.\.\.` to show where the warning was created\)\r?\n)?/gm, '');
 }
+test('listener warning filter removes only the exact SQLite warning and adjacent hint',()=>{
+  const warning='(node:123) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n';
+  const hint='(Use `node --trace-warnings ...` to show where the warning was created)\n';
+  assert.equal(normalizeRuntimeStderr(warning+hint+'PinID listener failed.\n'),'PinID listener failed.\n');
+  assert.equal(normalizeRuntimeStderr((warning+hint).replaceAll('\n','\r\n')),'');
+  for(const unexpected of [hint,'(node:123) ExperimentalWarning: Unknown feature\n'+hint,'Error: private unexpected error\n',warning.replace('SQLite','Other')]) {
+    assert.equal(normalizeRuntimeStderr(unexpected),unexpected);
+  }
+});
 function start(host,port) {
   const child=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'..'),
     env:{...process.env,PINID_LITE_ENABLED:'false',PINID_HOST:host,PORT:String(port)},stdio:['ignore','pipe','pipe']});
