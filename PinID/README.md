@@ -52,6 +52,8 @@ For Dokploy, deploy branch `pinid` with build path `/PinID`; use the Node builde
 
 Listener failure exits with a generic message and status 1. Check `PINID_HOST` and port conflicts; the server only prints its bound address after the native listening event. It does not expose resolver errors or a stack trace.
 
+Configuration/storage startup failures now print an allowlisted operator hint identifying invalid secrets/origin, missing storage/marker, permissions, or key mismatch without raw exception contents. Never regenerate the encryption key for an existing vault. The marker must be on the actual mounted directory, not only in the source/build image. If startup says the marker or directory is missing, verify the host bind mount first and provision `.pinid-durable-volume` containing `pinid-lite-local-volume-v1` there.
+
 Actual API hosting/replicas/storage/TLS remain unverified. Before enabling, confirm a single Node process and a durable host-local filesystem. Do not use PM2 cluster mode, autoscaling, replicas, serverless/ephemeral disks or network/NFS volumes. No deployment is performed here.
 
 1. Install Node 24 and run `npm ci --ignore-scripts` inside `PinID/`.
