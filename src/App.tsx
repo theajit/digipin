@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { PinIDResolver } from './PinIDResolver';
 import { Check, ChevronDown, Clipboard, Compass, ExternalLink, Grid2X2, HelpCircle, LocateFixed, Map, MapPin, RefreshCw, Search, Share2 } from 'lucide-react';
 import { OpenLocationCode } from 'open-location-code';
 
@@ -106,6 +107,7 @@ export function App() {
         <p>Turn any location in India into a shareable 10-character DIGIPIN, or trace a code back to its coordinates.</p>
       </section>
 
+      <PinIDResolver />
       <section className="workspace">
         <div className="tool-panel">
           <div className="segmented" aria-label="Conversion mode">
