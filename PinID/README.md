@@ -1,5 +1,7 @@
 # PinID — by Pin Code Café
 
+See [free allowance, immediate one-person invitations and Resend setup](docs/PLANS_AND_INVITATIONS.md) for migration 003, email request flows, checks and rollback. Extra handles are ₹199/year; this release accepts requests without activating handles or taking payment.
+
 This dedicated folder contains the explicitly authorized Lite exception to [PR-00 architecture](https://github.com/theajit/digipin/blob/pinid/docs/PINID_ARCHITECTURE.md), not completion of PR-01–05. One `username@pincode`, one private confirmed location, invite enrollment and a random owner recovery credential. Public resolution requires explicit owner opt-in; no OAuth, private third-party grants, payments or KitchenOS. The locally bundled DIGIPIN engine remains unchanged. Legacy API runtime/files are absent from this branch; other DIGIPIN branches and deployments remain independent.
 
 ## Folder and brand

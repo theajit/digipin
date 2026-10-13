@@ -1,6 +1,7 @@
 'use strict';
 // Allowlisted operator hints only. Never print arbitrary exception text/paths.
 const hints = new Map([
+  ['PinID Resend configuration invalid','Email sending requires RESEND_API_KEY and a verified sender address in PINID_EMAIL_FROM.'],
   ['Migration database target mismatch','Migration and runtime credentials must target the same PostgreSQL host, port and database.'],
   ['PostgreSQL migration credential required','Automatic schema migration requires PINID_MIGRATION_DATABASE_URL for a separate migration role.'],
   ['PostgreSQL configuration invalid','PostgreSQL configuration invalid. Check database URL, TLS, pinid schema, postgres-v1 version, pool and timeout settings; do not log credentials.'],

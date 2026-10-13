@@ -18,6 +18,14 @@ test('PostgreSQL persistence and private API contract', {skip:!url}, async t=>{
   await admin.query('DROP SCHEMA IF EXISTS pinid CASCADE');
   const autoConfig={backend:'postgres',postgres:pg,migration:pg,autoMigrate:true,origin:'https://pinid.test',secure:true,
     encryptionKey:Buffer.from(s.token(),'base64url'),sessionSecret:s.token(),adminSecret:s.token(),sessionSeconds:3600};
+  await t.test('v2 to v3 upgrade preserves existing alias, ciphertext and invitation hash',async()=>{
+    await admin.query('CREATE SCHEMA pinid');await admin.query('CREATE TABLE pinid.schema_migrations(version integer PRIMARY KEY,checksum text NOT NULL)');
+    const fs=require('node:fs');for(const [number,file] of [[1,'001_initial.sql'],[2,'002_community.sql']]){const sql=fs.readFileSync(path.join(__dirname,'../migrations/postgres',file),'utf8').replace(/\r\n/g,'\n');await admin.query(sql);await admin.run('INSERT INTO pinid.schema_migrations VALUES(?,?)',number,s.hash(sql));}
+    const crypto=require('node:crypto'),user=crypto.randomUUID(),location=crypto.randomUUID(),invite=crypto.randomUUID(),hash=s.hash(s.token()),encrypted=s.encrypt(autoConfig.encryptionKey,user,location,s.location({latitude:13,longitude:77,confirmed:true}));
+    await admin.run("INSERT INTO pinid.users VALUES(?,?,?,'active',?)",user,'upgrade-owner@pincode',hash,Date.now());await admin.run('INSERT INTO pinid.locations(id,user_id,encrypted,updated_at) VALUES(?,?,?,?)',location,user,encrypted,Date.now());await admin.run('INSERT INTO pinid.invitations VALUES(?,?,?,NULL)',invite,hash,Date.now()+172800000);
+    await migrate(pg);await migrate(pg);assert.equal((await admin.get('SELECT encrypted FROM pinid.locations WHERE id=?',location)).encrypted,encrypted);assert.equal((await admin.get('SELECT alias FROM pinid.users WHERE id=?',user)).alias,'upgrade-owner@pincode');assert.equal((await admin.get('SELECT token_hash FROM pinid.invitations WHERE id=?',invite)).token_hash,hash);assert.equal(Number((await admin.get('SELECT count(*) AS n FROM pinid.schema_migrations')).n),3);
+    await admin.query('DROP SCHEMA pinid CASCADE');
+  });
   await t.test('startup auto-migrates clean database concurrently and repeat startup preserves data',async()=>{
     const apps=await Promise.all([createAppAsync(autoConfig),createAppAsync(autoConfig)]);
     try{const invitation=await apps[0].locals.pinid.invite();assert.ok(invitation.invitation);}

@@ -1,5 +1,7 @@
 # Administrator invitations, interest queue and optional public resolution
 
+Later product update: users can now issue one personal invitation immediately through Resend. See [plans and invitations](PLANS_AND_INVITATIONS.md); public registration requests still use the administrator queue. The administrator-only issuance description below records the earlier release.
+
 User-authorized product expansion: platform administrators only create/review invitations; queue fields are name, phone, email and desired username; anyone may resolve a handle only after its owner explicitly enables sharing. This supersedes the initial no-public-resolution beta wording. No government verification, affiliation, address ownership proof, OAuth, payments or private third-party access is introduced.
 
 ## Architecture, privacy and threat decisions

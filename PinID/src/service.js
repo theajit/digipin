@@ -106,6 +106,8 @@ class Service {
     const user = this.repo.get("SELECT recovery_hash FROM users WHERE id=? AND status='active'", userId);
     if (!s.validToken(credential) || !user || !s.same(user.recovery_hash, s.hash(credential))) throw new s.LiteError('RECOVERY_FAILED', 401);
     this.repo.transaction(() => {
+        this.repo.run('DELETE FROM interest_requests WHERE id IN (SELECT request_id FROM owner_invites WHERE user_id=?)', userId);
+        this.repo.run('DELETE FROM interest_requests WHERE owner_user_id=?', userId);
       this.repo.run('DELETE FROM locations WHERE user_id=?', userId);
       this.repo.run('DELETE FROM sessions WHERE user_id=?', userId);
       this.repo.run("UPDATE users SET status='deleted',recovery_hash=NULL WHERE id=?", userId);
@@ -116,4 +118,6 @@ class Service {
   close() { this.repo.close(); }
 }
 Object.assign(Service.prototype, require('./community'));
+Object.assign(Service.prototype, require('./owner-invites'));
+Object.assign(Service.prototype, require('./request-export'));
 module.exports = { Service };
