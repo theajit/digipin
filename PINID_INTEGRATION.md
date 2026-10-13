@@ -1,0 +1,11 @@
+# Optional public PinID lookup
+
+PR targets `digipin-ui`, not main or pinid. PinID is a fourth tab inside the existing conversion workspace, using the same form, error/loading behavior and DIGIPIN/coordinate/map/copy/share result panel as Generate, Decode and Plus Code. The separate resolver card/component is removed. Desktop tabs use four columns; mobile uses two columns. Existing encoding/decoding/Plus Code API calls stay unchanged.
+
+Default backend: https://name.pincode.cafe; override VITE_PINID_ORIGIN at build time for isolated testing only. Calls POST /api/resolve JSON {handle}, credentials omitted, no-store. PinID API must allow only this site's Origin on its public resolver and return only explicitly owner-shared coordinates/DIGIPIN. No labels, notes or contacts are requested. Private/nonexistent handles are indistinguishable. Errors clear old results; no persistent handle/location storage is added. No government address/identity verification claim.
+
+Deploy the reviewed PinID sharing API before the UI. Current production CORS allows https://digipin.pincode.cafe exactly. Local synthetic QA used a fixture-specific localhost Origin, not a deployed setting. Actual local build `npm run build` passed; browser resolved synthetic ajit@pincode and verified failure after owner revocation. Screenshots/results are Git-ignored in the parent test-data/evidence directory; no live data used or deployment performed.
+
+Rollback restores prior UI build; backend deployment is separate. Public addresses may already be copied by viewers. NO automatic merge/deploy; review API and UI PRs independently.
+
+Tab redesign verification: final production build passed. Actual Edge local flow selected PinID, resolved synthetic ajit@pincode in the shared DIGIPIN/coordinates/map/actions panel, then showed the shared form error and cleared results after owner revocation. A 390px mobile viewport reported content width 375px (no horizontal overflow); viewport restored after checking. New ignored screenshots: parent test-data/evidence/digipin-pinid-tab-desktop.jpg and digipin-pinid-tab-mobile.jpg. Backend and production deployments are unchanged. Mode changes clear result/error state; PinID is not added to recent-location history.
