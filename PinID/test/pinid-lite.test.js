@@ -88,7 +88,7 @@ test('persistence, migration reapplication, wrong-key refusal and single writer'
   service = new Service(config); t.after(() => service.close());
   assert.equal(service.owner(first.session), first.profile.id);
   assert.equal(service.recover(first.recovery_credential).profile.location.digipin, '4P3JK83M28');
-  assert.equal(service.repo.get('SELECT COUNT(*) AS n FROM schema_migrations').n, 1);
+  assert.equal(service.repo.get('SELECT COUNT(*) AS n FROM schema_migrations').n, 2);
 });
 test('recovery rotates sessions; expiry, deletion and cross-owner operations deny', t => {
   const { config } = fixture(t); let now = Date.now(); const service = new Service(config, () => now); t.after(() => service.close());

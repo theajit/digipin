@@ -5,6 +5,7 @@ const { Service } = require('./service');
 const s = require('./security');
 function createLite(config, providedService) {
   const service = providedService || new Service(config); const router = express.Router();
+  const resolverOrigin=config.resolverOrigin||'https://digipin.pincode.cafe';
   const cookieName = config.secure ? '__Host-pinid_lite' : 'pinid_lite';
   function cookie(req) {
     const values = (req.headers.cookie || '').split(';').map(value => value.trim()).filter(value => value.startsWith(`${cookieName}=`));
@@ -21,9 +22,13 @@ function createLite(config, providedService) {
     next();
   });
   router.use('/api', (req, res, next) => {
+    if(req.path==='/resolve'&&req.headers.origin===resolverOrigin) {
+      res.set('Access-Control-Allow-Origin',resolverOrigin).set('Vary','Origin');
+      if(req.method==='OPTIONS')return res.set('Access-Control-Allow-Methods','POST').set('Access-Control-Allow-Headers','Content-Type').sendStatus(204);
+    }
     if (req.method === 'OPTIONS') return res.sendStatus(403);
     if (!['GET', 'HEAD'].includes(req.method)) {
-      if (req.headers.origin !== config.origin) return next(new s.LiteError('ORIGIN_REJECTED', 403));
+      if (req.headers.origin !== config.origin && !(req.path==='/resolve'&&req.headers.origin===resolverOrigin)) return next(new s.LiteError('ORIGIN_REJECTED', 403));
       if (!req.is('application/json')) return next(new s.LiteError('JSON_REQUIRED', 415));
     }
     next();
@@ -40,6 +45,19 @@ function createLite(config, providedService) {
     setCookie(res, value.session);
     res.json({ ...value.profile, csrf: service.csrf(value.session), ...(value.recovery_credential ? { recovery_credential: value.recovery_credential } : {}) });
   }
+  const adminCookieName=config.secure?'__Host-pinid_admin':'pinid_admin';
+  const adminCookie=req=>{const parts=(req.headers.cookie||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(adminCookieName+'='));return parts.length===1?parts[0].slice(adminCookieName.length+1):'';};
+  const setAdminCookie=(res,session,clear=false)=>res.set('Set-Cookie',`${adminCookieName}=${session}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${clear?0:3600}${config.secure?'; Secure':''}`);
+  const admin=async(req,res,next)=>{try{const session=adminCookie(req);await service.adminCheck(session);req.adminSession=session;if(req.method!=='GET'&&!s.same(req.get('X-PinID-CSRF'),service.csrf(session)))throw new s.LiteError('CSRF_REJECTED',403);next();}catch(error){next(error);}};
+  router.post('/api/interest',attempt('interest'),async(req,res)=>res.status(202).json(await service.interest(req.body)));
+  router.post('/api/resolve',attempt('resolve'),async(req,res)=>res.json(await service.resolve(req.body)));
+  router.post('/api/admin/login',attempt('admin'),async(req,res)=>{const session=await service.adminLogin(req.body);setAdminCookie(res,session);res.json({csrf:service.csrf(session)});});
+  router.get('/api/admin/me',attempt('owner'),admin,(req,res)=>res.json({csrf:service.csrf(req.adminSession)}));
+  router.post('/api/admin/queue',attempt('owner'),admin,async(req,res)=>{s.fields(req.body,['before']);res.json(await service.queue(req.body.before));});
+  router.post('/api/admin/invitations',attempt('owner'),admin,async(req,res)=>{s.fields(req.body,[]);res.status(201).json(await service.invite());});
+  router.post('/api/admin/requests/:id',attempt('owner'),admin,async(req,res)=>res.json(await service.decide(req.params.id,req.body)));
+  router.delete('/api/admin/requests/:id',attempt('owner'),admin,async(req,res)=>{s.fields(req.body,[]);await service.removeRequest(req.params.id);res.sendStatus(204);});
+  router.post('/api/admin/logout',admin,async(req,res)=>{s.fields(req.body,[]);await service.adminLogout(req.adminSession);setAdminCookie(res,'',true);res.sendStatus(204);});
   router.get('/api/health', async (req, res) => {
     try {res.status(await service.health() ? 200 : 503).json({ status: 'ok', pinid_lite: 'enabled' });}
     catch {res.status(503).json({status:'unavailable'});}
@@ -53,6 +71,8 @@ function createLite(config, providedService) {
     s.fields(req.body, ['credential'], ['credential']); result(res, await service.recover(req.body.credential));
   });
   router.use('/api', attempt('owner'), owner);
+  router.get('/api/sharing',async(req,res)=>res.json(await service.sharingStatus(req.ownerId)));
+  router.put('/api/sharing',async(req,res)=>res.json(await service.sharing(req.ownerId,req.body)));
   router.get('/api/me', async (req, res) => res.json({ ...await service.profile(req.ownerId), csrf: service.csrf(req.ownerSession) }));
   router.get('/api/me/export', async (req, res) => {
     res.set('Content-Disposition', 'attachment; filename="pinid-export.json"'); res.json(await service.profile(req.ownerId));

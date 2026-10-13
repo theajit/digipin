@@ -6,4 +6,4 @@ The application lives entirely inside [PinID/](PinID/README.md), with its own se
 
 Run inside PinID: npm ci --ignore-scripts, npm run check, npm test, then npm start. Configure secrets and durable local storage before enabling. UI: /; private API: /api; health: /healthz.
 
-See [deployment and rollback](PinID/README.md) and [verification](PinID/docs/VERIFICATION.md). No public address resolution, government verification, payments or third-party access. PR-00 documents in docs/PINID_* remain historical context. Generated data, credentials and evidence stay Git-ignored.
+See [deployment and rollback](PinID/README.md), [verification](PinID/docs/VERIFICATION.md), and [administrator queue and opt-in public sharing](PinID/docs/INVITATIONS_AND_SHARING.md). No government verification, payments or private third-party access. PR-00 documents in docs/PINID_* remain historical context. Generated data, credentials and evidence stay Git-ignored.

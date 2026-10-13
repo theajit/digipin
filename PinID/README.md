@@ -1,8 +1,10 @@
 # PinID — by Pin Code Café
 
-This dedicated folder contains the explicitly authorized Lite exception to [PR-00 architecture](https://github.com/theajit/digipin/blob/pinid/docs/PINID_ARCHITECTURE.md), not completion of PR-01–05. One `username@pincode`, one private confirmed location, invite enrollment and a random owner recovery credential. No public resolution, OAuth, consent grants, third parties, payments or KitchenOS. The locally bundled DIGIPIN engine remains unchanged. Legacy API runtime/files are absent from this branch; other DIGIPIN branches and deployments remain independent.
+This dedicated folder contains the explicitly authorized Lite exception to [PR-00 architecture](https://github.com/theajit/digipin/blob/pinid/docs/PINID_ARCHITECTURE.md), not completion of PR-01–05. One `username@pincode`, one private confirmed location, invite enrollment and a random owner recovery credential. Public resolution requires explicit owner opt-in; no OAuth, private third-party grants, payments or KitchenOS. The locally bundled DIGIPIN engine remains unchanged. Legacy API runtime/files are absent from this branch; other DIGIPIN branches and deployments remain independent.
 
 ## Folder and brand
+
+Current expansion: [administrator invitation desk, encrypted interest queue and owner-controlled public sharing](docs/INVITATIONS_AND_SHARING.md). Locations remain private by default. Public lookup returns only the opted-in handle, DIGIPIN and coordinates; private notes are never resolved. Administrator UI is `/admin.html`.
 
 Branch: `pinid`. Product host remains `name.pincode.cafe`; address identities remain `username@pincode`. This is a self-contained application in this repository: its own server, UI, API, dependencies and unmodified locally bundled DIGIPIN engine. The legacy DIGIPIN application remains on its own branches.
 
