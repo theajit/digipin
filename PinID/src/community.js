@@ -3,13 +3,10 @@ const crypto=require('node:crypto');const s=require('./security');
 module.exports={
  interest(input){
   s.fields(input,['name','phone','email','username','confirmed'],['name','phone','email','username','confirmed']);
-  if(input.confirmed!==true||typeof input.name!=='string'||input.name.trim().length<1||input.name.length>100||
-    typeof input.email!=='string'||input.email.length>254||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)||
-    typeof input.phone!=='string'||(! /^[+0-9 ()-]{7,25}$/.test(input.phone)||input.phone.replace(/\D/g,'').length<7||input.phone.replace(/\D/g,'').length>15))throw new s.LiteError('INVALID_REQUEST');
-  const payload={name:input.name.trim(),phone:input.phone.trim(),email:input.email.trim(),alias:s.alias(input.username)};
+  const {username,...details}=input;const payload={...require('./invitation-contact').contact(details),alias:s.alias(username)};
   const id=crypto.randomUUID();
   this.repo.run('INSERT INTO interest_requests(id,encrypted,created_at) VALUES(?,?,?)',id,s.encrypt(this.config.encryptionKey,'interest-queue',id,payload),this.now());
-  return {status:'received'};
+  return {status:'received',id};
  },
  adminHash(value){return this.sessionHash(`administrator:${this.config.adminSecret}:${value}`);},
  adminLogin(input){
@@ -22,21 +19,24 @@ module.exports={
  queue(before){
   if(before!==undefined)s.fields(before,['time','id'],['time','id']);
   const cutoff=before?.time??Number.MAX_SAFE_INTEGER, last=before?.id??'ffffffff-ffff-ffff-ffff-ffffffffffff';if(!Number.isSafeInteger(cutoff)||cutoff<0||typeof last!=='string'||! /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(last))throw new s.LiteError('INVALID_REQUEST');
-  const rows=this.repo.all('SELECT * FROM interest_requests WHERE created_at<? OR (created_at=? AND id<?) ORDER BY created_at DESC,id DESC LIMIT 50',cutoff,cutoff,last);
-  return {items:rows.map(row=>({id:row.id,status:row.status,created_at:Number(row.created_at),...s.decrypt(this.config.encryptionKey,'interest-queue',row.id,row.encrypted)})),next_cursor:rows.length===50?{time:Number(rows.at(-1).created_at),id:rows.at(-1).id}:null};
+  const rows=this.repo.all('SELECT *, (SELECT users.alias FROM owner_invites JOIN users ON users.id=owner_invites.user_id WHERE owner_invites.request_id=interest_requests.id) AS inviter FROM interest_requests WHERE created_at<? OR (created_at=? AND id<?) ORDER BY created_at DESC,id DESC LIMIT 50',cutoff,cutoff,last);
+  return {items:rows.map(row=>({id:row.id,status:row.status,kind:row.kind,notification_status:row.notification_status,inviter:row.inviter||null,created_at:Number(row.created_at),...s.decrypt(this.config.encryptionKey,'interest-queue',row.id,row.encrypted)})),next_cursor:rows.length===50?{time:Number(rows.at(-1).created_at),id:rows.at(-1).id}:null};
  },
  decide(id,input){
   s.fields(input,['decision'],['decision']);if(!['approve','reject'].includes(input.decision))throw new s.LiteError('INVALID_REQUEST');
   if(! /^[0-9a-f-]{36}$/i.test(id))throw new s.LiteError('NOT_FOUND',404);
   return this.repo.transaction(()=>{
-   const request=this.repo.get('SELECT status FROM interest_requests WHERE id=?',id);
+   const request=this.repo.get('SELECT status,kind FROM interest_requests WHERE id=?',id);
    if(!request||request.status!=='pending')throw new s.LiteError('NOT_FOUND',404);
+   if(request.kind==='extra_handle'&&input.decision==='approve')throw new s.LiteError('HANDLE_FULFILLMENT_UNAVAILABLE',409);
    const changed=this.repo.run('UPDATE interest_requests SET status=? WHERE id=? AND status=?',input.decision==='approve'?'approved':'rejected',id,'pending');
    if(changed.changes!==1)throw new s.LiteError('NOT_FOUND',404);
    let result=null;if(input.decision==='approve'){
     const invitation=s.token(),expires=this.now()+172800000;
-    this.repo.run('INSERT INTO invitations VALUES(?,?,?,NULL)',crypto.randomUUID(),s.hash(invitation),expires);
-    result={invitation,expires_at:expires};
+    const invitationId=crypto.randomUUID();this.repo.run('INSERT INTO invitations VALUES(?,?,?,NULL)',invitationId,s.hash(invitation),expires);
+    this.repo.run('UPDATE owner_invites SET invitation_id=? WHERE request_id=?',invitationId,id);
+    this.repo.run('INSERT INTO invitation_links(invitation_id,request_id) VALUES(?,?)',invitationId,id);
+    result={id:invitationId,invitation,expires_at:expires};
    }
    this.audit(null,`interest.${input.decision}`);return result;
   });

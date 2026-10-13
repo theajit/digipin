@@ -23,7 +23,7 @@ function loadConfig(env = process.env) {
     throw new Error('PinID Lite requires an exact HTTPS PINID_ORIGIN (explicit local development exception only)');
   }
   const common = { origin: origin.origin, encryptionKey: Buffer.from(encryptionKey, 'base64url'),
-    sessionSecret, adminSecret, secure: !development, sessionSeconds: 3600 };
+    sessionSecret, adminSecret, secure: !development, sessionSeconds: 3600, mail:require('./mail').mailConfig(env) };
   const backend = env.PINID_STORAGE_BACKEND || 'sqlite';
   if (backend === 'postgres') {
     const { postgresConfig } = require('./postgres-config');
@@ -50,7 +50,6 @@ function loadConfig(env = process.env) {
     throw new Error('PinID Lite persistent-volume marker missing');
   }
   fs.accessSync(directory, fs.constants.R_OK | fs.constants.W_OK);
-  return { directory: fs.realpathSync(directory), origin: origin.origin, encryptionKey: Buffer.from(encryptionKey, 'base64url'),
-    sessionSecret, adminSecret, secure: !development, sessionSeconds: 3600 };
+  return { ...common,directory: fs.realpathSync(directory) };
 }
 module.exports = { loadConfig };
