@@ -2,15 +2,16 @@
 const express = require('express');
 const { loadConfig } = require('./config');
 const { createLite } = require('./routes');
-function createApp(config = loadConfig()) {
+function createApp(config = loadConfig(), providedService) {
+  if(config?.backend==='postgres'&&!providedService)throw new Error('PostgreSQL requires async app startup');
   const app = express(); app.disable('x-powered-by');
   if (!config) {
     app.use((req, res) => res.status(503).set('Cache-Control', 'no-store').json({ error: { code: 'PINID_DISABLED' } }));
     return app;
   }
-  const lite = createLite(config); app.locals.pinid = lite.service;
-  app.get('/healthz', (req, res) => {
-    try { res.status(lite.service.health() ? 200 : 503).json({ status: 'ok', pinid: 'enabled' }); }
+  const lite = createLite(config,providedService); app.locals.pinid = lite.service;
+  app.get('/healthz', async (req, res) => {
+    try { res.status(await lite.service.health() ? 200 : 503).json({ status: 'ok', pinid: 'enabled' }); }
     catch { res.status(503).json({ status: 'unavailable' }); }
   });
   // One service/session store, with the original prefix retained for old clients.
@@ -19,4 +20,8 @@ function createApp(config = loadConfig()) {
   app.use((req, res) => res.status(404).set('Cache-Control', 'no-store').json({ error: { code: 'NOT_FOUND' } }));
   return app;
 }
-module.exports = { createApp };
+async function createAppAsync(config=loadConfig()) {
+  const service=config?.backend==='postgres'?await require('./postgres-service').Service.create(config):undefined;
+  return createApp(config,service);
+}
+module.exports = { createApp,createAppAsync };

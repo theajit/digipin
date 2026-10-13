@@ -3,7 +3,8 @@ const path = require('node:path');
 require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true });
 process.umask(0o077);
 let app;
-try { app = require('./src/app').createApp(); }
+async function main(){
+try { app = await require('./src/app').createAppAsync(); }
 catch (error) { process.stderr.write(`PinID startup failed. ${require('./src/startup-error').startupHint(error)}\n`); process.exit(1); }
 const port = Number(process.env.PORT || 5001);
 const host = process.env.PINID_HOST || '127.0.0.1';
@@ -19,6 +20,8 @@ server.once('listening', () => {
 });
 server.listen(port, host);
 for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => {
-  server.close(() => { app.locals.pinid?.close(); process.exit(0); });
+  server.close(async () => { try { await app.locals.pinid?.close(); process.exit(0); } catch { process.exit(1); } });
   setTimeout(() => process.exit(1), 10000).unref();
 });
+}
+main().catch(()=>{process.stderr.write('PinID startup failed. Check configuration and database availability.\n');process.exit(1);});
