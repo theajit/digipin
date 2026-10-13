@@ -5,7 +5,12 @@ const { spawn } = require('node:child_process');
 const { once } = require('node:events');
 const http = require('node:http');
 const path = require('node:path');
-function normalizeRuntimeStderr(stderr) {\n  return stderr\n    .replace(/^\\(node:\\d+\\) ExperimentalWarning: SQLite is an experimental feature and might change at any time\\r?\\n/gm, '')\n    .replace(/^\\(Use `node --trace-warnings \\.\\.\\.` to show where the warning was created\\)\\r?\\n/gm, '');\n}\nfunction start(host,port) {
+function normalizeRuntimeStderr(stderr) {
+  return stderr
+    .replace(/^\(node:\d+\) ExperimentalWarning: SQLite is an experimental feature and might change at any time\r?\n/gm, '')
+    .replace(/^\(Use `node --trace-warnings \.\.\.` to show where the warning was created\)\r?\n/gm, '');
+}
+function start(host,port) {
   const child=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'..'),
     env:{...process.env,PINID_LITE_ENABLED:'false',PINID_HOST:host,PORT:String(port)},stdio:['ignore','pipe','pipe']});
   let output='';let errors='';child.stdout.on('data',x=>output+=x);child.stderr.on('data',x=>errors+=x);
