@@ -49,7 +49,7 @@ class Service {
         const invite = this.repo.get('SELECT id FROM invitations WHERE token_hash=? AND consumed_at IS NULL AND expires_at>?', s.hash(input.invitation), this.now());
         if (!invite) throw new s.LiteError('ENROLLMENT_FAILED');
         this.repo.run('INSERT INTO users VALUES(?,?,?,\'active\',?)', userId, name, s.hash(recovery), this.now());
-        this.repo.run('INSERT INTO locations VALUES(?,?,?,?)', locationId, userId, s.encrypt(this.config.encryptionKey, userId, locationId, payload), this.now());
+        this.repo.run('INSERT INTO locations(id,user_id,encrypted,updated_at) VALUES(?,?,?,?)', locationId, userId, s.encrypt(this.config.encryptionKey, userId, locationId, payload), this.now());
         const consumed = this.repo.run('UPDATE invitations SET consumed_at=? WHERE id=? AND consumed_at IS NULL', this.now(), invite.id);
         if (consumed.changes !== 1) throw new s.LiteError('ENROLLMENT_FAILED');
         const session = this.createSession(userId); this.audit(userId, 'identity.enrolled');
@@ -91,7 +91,7 @@ class Service {
       const old = this.repo.get('SELECT id FROM locations WHERE user_id=?', userId);
       if (locationId && (!old || old.id !== locationId)) throw new s.LiteError('NOT_FOUND', 404);
       const id = old?.id || crypto.randomUUID();
-      this.repo.run('INSERT INTO locations VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET encrypted=excluded.encrypted,updated_at=excluded.updated_at', id, userId, s.encrypt(this.config.encryptionKey, userId, id, payload), this.now());
+      this.repo.run('INSERT INTO locations(id,user_id,encrypted,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET encrypted=excluded.encrypted,updated_at=excluded.updated_at,public_enabled=0', id, userId, s.encrypt(this.config.encryptionKey, userId, id, payload), this.now());
       this.audit(userId, 'location.saved'); return this.getLocation(userId, id);
     });
   }
@@ -115,4 +115,5 @@ class Service {
   health() { return this.repo.get('SELECT 1 AS ok').ok === 1; }
   close() { this.repo.close(); }
 }
+Object.assign(Service.prototype, require('./community'));
 module.exports = { Service };

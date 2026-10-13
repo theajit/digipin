@@ -57,7 +57,7 @@ class Service {
         const invite = await this.repo.get('SELECT id,expires_at FROM invitations WHERE token_hash=? AND consumed_at IS NULL AND expires_at>? FOR UPDATE', s.hash(input.invitation), this.now());
         if (!invite || invite.expires_at <= this.now()) throw new s.LiteError('ENROLLMENT_FAILED');
         await this.repo.run('INSERT INTO users VALUES(?,?,?,\'active\',?)', userId, name, s.hash(recovery), this.now());
-        await this.repo.run('INSERT INTO locations VALUES(?,?,?,?)', locationId, userId, s.encrypt(this.config.encryptionKey, userId, locationId, payload), this.now());
+        await this.repo.run('INSERT INTO locations(id,user_id,encrypted,updated_at) VALUES(?,?,?,?)', locationId, userId, s.encrypt(this.config.encryptionKey, userId, locationId, payload), this.now());
         const consumed = await this.repo.run('UPDATE invitations SET consumed_at=? WHERE id=? AND consumed_at IS NULL', this.now(), invite.id);
         if (consumed.changes !== 1) throw new s.LiteError('ENROLLMENT_FAILED');
         const session = await this.createSession(userId); await this.audit(userId, 'identity.enrolled');
@@ -102,7 +102,7 @@ class Service {
       const old = await this.repo.get('SELECT id FROM locations WHERE user_id=?', userId);
       if (locationId && (!old || old.id !== locationId)) throw new s.LiteError('NOT_FOUND', 404);
       const id = old?.id || crypto.randomUUID();
-      await this.repo.run('INSERT INTO locations VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET encrypted=excluded.encrypted,updated_at=excluded.updated_at', id, userId, s.encrypt(this.config.encryptionKey, userId, id, payload), this.now());
+      await this.repo.run('INSERT INTO locations(id,user_id,encrypted,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET encrypted=excluded.encrypted,updated_at=excluded.updated_at,public_enabled=0', id, userId, s.encrypt(this.config.encryptionKey, userId, id, payload), this.now());
       await this.audit(userId, 'location.saved'); return await this.getLocation(userId, id);
     });
   }
@@ -129,4 +129,5 @@ class Service {
   async health() { await this.repo.get('SELECT version FROM schema_migrations ORDER BY version LIMIT 1'); return true; }
   async close() { await this.repo.close(); }
 }
+Object.assign(Service.prototype, require('./postgres-community'));
 module.exports = { Service };

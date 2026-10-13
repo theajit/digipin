@@ -18,6 +18,7 @@ async function api(path, method = 'GET', body) {
   return value;
 }
 function clear() {
+  $('interest').reset();$('resolve').reset();$('resolved').replaceChildren();$('sharing').reset();
   profile = null; csrf = ''; $('dashboard').hidden = true; $('access').hidden = false;
   $('recovery-once').hidden = true; $('new-credential').textContent = ''; $('alias').textContent = '';
   $('saved-location').replaceChildren(); $('edit').reset(); $('delete-user').reset();
@@ -31,6 +32,7 @@ function show(value) {
     const dt = document.createElement('dt'); const dd = document.createElement('dd'); dt.textContent = label; dd.textContent = String(data); $('saved-location').append(dt, dd);
   }
   $('delete-location').hidden = !record;
+  api('/sharing').then(status=>{if(profile?.id!==value.id)return;$('sharing').elements.enabled.checked=status.enabled;$('sharing').elements.confirmed.checked=false;$('sharing-status').textContent=status.enabled?'Public resolution enabled.':'Private: public resolution is off.';}).catch(()=>{});
   for (const name of ['label', 'latitude', 'longitude', 'address']) $('edit').elements[name].value = record?.[name] ?? (name === 'label' ? 'Home' : '');
   $('edit').elements.confirmed.checked = false; updatePreview($('edit'));
 }
@@ -81,3 +83,8 @@ $('export').addEventListener('click', async () => {
 window.addEventListener('pagehide', clear);
 window.addEventListener('pageshow', () => { api('/me').then(show).catch(() => clear()); });
 for (const button of document.querySelectorAll('button[type="submit"]')) button.disabled = false;
+
+submit($('interest'),async()=>{const form=$('interest');await api('/interest','POST',{name:form.elements.name.value,phone:form.elements.phone.value,email:form.elements.email.value,username:form.elements.username.value,confirmed:form.elements.confirmed.checked});form.reset();message('Request received. The administrator will review it; your username is not reserved.');});
+submit($('resolve'),async()=>{$('resolved').replaceChildren();const value=await api('/resolve','POST',{handle:$('resolve').elements.handle.value});$('resolved').replaceChildren();for(const [label,data] of Object.entries(value)){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=String(data);$('resolved').append(dt,dd);}});
+submit($('sharing'),async()=>{const form=$('sharing');await api('/sharing','PUT',{enabled:form.elements.enabled.checked,confirmed:form.elements.confirmed.checked});show(await api('/me'));message('Sharing preference saved. Revocation prevents future lookup; existing copies cannot be recalled.');});
+for(const button of document.querySelectorAll('button[type="submit"]'))button.disabled=false;

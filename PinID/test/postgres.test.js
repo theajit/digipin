@@ -45,6 +45,7 @@ test('PostgreSQL persistence and private API contract', {skip:!url}, async t=>{
     return fetch(base+route,{method,headers,...(body===undefined?{}:{body:JSON.stringify(body)})});
   };
   try {
+    await t.test('PostgreSQL administrator queue and public sharing contract',async t=>require('./helpers/community-contract').contract(t,service,config));
     await t.test('migration repeat/checksum and least-privilege runtime',async()=>{
       await service.repo.verify();await assert.rejects(()=>service.repo.query('CREATE TABLE pinid.not_allowed(id integer)'));
       await admin.run("UPDATE schema_migrations SET checksum='tampered' WHERE version=1");
